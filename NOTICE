@@ -1,0 +1,12 @@
+###----------------------------------------------------------------###
+
+RIDDLE is an open-source Python library for using deep learning to 
+impute race and ethnicity information in anonymized electronic medical
+records (EMRs). It was developed as part of research funded by the 
+DARPA Big Mechanism program and a gift from Liz and Kent Dauten.
+
+Original Authors:   Ji-Sung Kim, Andrey Rzhetsky
+Date of release:    June 2017
+Code license:       Apache License 2.0
+
+###----------------------------------------------------------------###

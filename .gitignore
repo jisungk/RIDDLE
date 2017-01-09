@@ -1,0 +1,123 @@
+# Project
+_*/
+*out*/
+*.txt
+*.png
+venv/
+
+# Batch scripts / output
+*.sbatch
+*.err
+*.out
+
+# Sublime temp files
+*~
+
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+env/
+build/
+develop-eggs/w
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# PyInstaller
+#  Usually these files are written by a python script from a template
+#  before PyInstaller builds the exe, so as to inject date/other infos into it.
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*,cover
+.hypothesis/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+target/
+
+# Ipython Notebook
+.ipynb_checkpoints
+
+# R
+.Rproj.user
+.Rhistory
+.Rapp.history
+.RData
+*-Ex.R
+/*.tar.gz
+/*.Rcheck/
+vignettes/*.html
+vignettes/*.pdf
+.httr-oauth
+
+# RStudio
+/build/
+build_*/
+build-*/
+*-build/
+qtcreator-build
+.DS_Store
+src/gwt/www/js/acesupport.js
+src/gwt/www/js/ace.js
+src/gwt/src/org/rstudio/studio/client/workbench/views/source/editors/text/ace/acesupport.js
+src/gwt/src/org/rstudio/core/client/jsonrpc/json2.min.js
+src/gwt/www/js/json2.min.js
+src/gwt/tools/ace/
+src/gwt/tools/pdfjs/
+src/gwt/.ant-targets-build.xml
+/src/gwt/.gwt/.gwt-log
+.Rprofile
+/src/gwt/bin.test/
+/src/gwt/gwt-unitCache/
+NEWS.html
+CONTRIBUTING.html
+CMakeLists.txt.user
+.idea/
+**/\.tern-port
+.#*
+*.autosave
+*~
+*swp
+.orig
+.vagrant
+*_cache
+*_files
+*.pdf
