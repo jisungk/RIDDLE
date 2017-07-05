@@ -1,7 +1,7 @@
 # Project
-_*/
+_hide/
+_secret/
 *out*/
-*.txt
 *.png
 venv/
 

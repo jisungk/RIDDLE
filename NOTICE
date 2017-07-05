@@ -1,12 +1,22 @@
 ###----------------------------------------------------------------###
 
+If this notice is included in a distribution, then the distribution
+is lawfully acknowledging that it uses, changes, or adapts code 
+from RIDDLE.
+
 RIDDLE is an open-source Python library for using deep learning to 
 impute race and ethnicity information in anonymized electronic medical
-records (EMRs). It was developed as part of research funded by the 
-DARPA Big Mechanism program and a gift from Liz and Kent Dauten.
+records (EMRs). RIDDLE was developed as part of research funded by the 
+DARPA Big Mechanism program and a gift from Liz and Kent Dauten. 
+
+RIDDLE implements the methods introduced in "RIDDLE: Race and 
+ethnicity Imputation from Disease history with Deep LEarning" 
+by Ji-Sung Kim and Andrey Rzhetsly. 
+
+More information about RIDDLE can be found at https://riddle.ai
 
 Original Authors:   Ji-Sung Kim, Andrey Rzhetsky
-Date of release:    June 2017
+Date of release:    July 2017
 Code license:       Apache License 2.0
 
 ###----------------------------------------------------------------###
