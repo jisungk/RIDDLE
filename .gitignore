@@ -3,7 +3,6 @@ _*/
 *data*/
 *out*/
 *.txt
-*.png
 venv/
 
 # Batch scripts / output
