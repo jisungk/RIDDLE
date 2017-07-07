@@ -1,11 +1,12 @@
 """
 feature_importance.py
 
-Computes feature contribution scores via deepLIFT (Shrikumar et al., 2016) & 
-determines most important features via paired t-test with adjustment
-for multiple comparisons (Bonferroni correction) using said scores.
+Computes feature contribution scores via DeepLIFT (Shrikumar et al., 2016).
+Determines most important features via paired t-test with adjustment
+for multiple comparisons (Bonferroni correction) using said scores; compares
+score vectors between different classes for a fixed feature. 
 
-Requires:   NumPy, SciPy, deepLIFT (and their dependencies)
+Requires:   NumPy, SciPy, DeepLIFT (and their dependencies)
 
 Author:     Ji-Sung Kim, Rzhetsky Lab
 Copyright:  2016, all rights reserved

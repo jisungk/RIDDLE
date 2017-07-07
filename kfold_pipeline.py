@@ -5,7 +5,7 @@ Run multiple deep learning pipelines with k-fold cross-validation, and
 summarize discriminatory features using deepLIFT contribution scores and
 paired t-tests with adjustment for multiple comparisons (Bonferroni correction).
 
-Requires:   NumPy, SciPy RIDDLE, pipeline.py (and their dependencies)
+Requires:   NumPy, RIDDLE, pipeline.py (and their dependencies)
 
 Author:     Ji-Sung Kim, Rzhetsky Lab
 Copyright:  2016, all rights reserved
@@ -32,10 +32,10 @@ from pipeline import eprint, pickle_object, run_pipeline
 '''
 * Prints metrics out in an organized fashion.
 * Expects:
-    - list of loss scores (losses)
-    - list of accuracies (accs)
-    - list of runtimes (runtimes)
-    - string identifier (id_string)
+    - losses = list of loss scores
+    - accs = list of accuracies
+    - runtimes = list of runtimes
+    - id_string = string identifier
 '''
 def print_metrics(losses, accs, runtimes, id_string):
     print('#' * 72)
@@ -54,14 +54,15 @@ def print_metrics(losses, accs, runtimes, id_string):
 * Runs multiple pipelines in line with k-fold cross-validations, using a 
   different partition as the test partition each time.
 * Expects:
-    - model module (model_module)
-    - dictionary of model model parameters (model_params)
-    - all data (X, y)
-    - numbers of features (nb_features) and classes (nb_classes)
-    - number of partitions for k-fold cross-validation (k)
-    - boolean of whether to run model interpretation (interpret_model)
-    - string out directory (out_directory)
-    - string identifier (id_string)
+    - model_module = model module
+    - model_params = dictionary of model model parameters
+    - X = feature data
+    - y = class data 
+    - nb_features = number of features
+    - nb_classes = number of classes
+    - interpret_model = boolean whether to compute feature importance scores
+    - out_directory = string out directory
+    - id_string = string identifier
 * Returns:
     - tuple of lists (losses, accuracies)
     - tuple of lists sums of differences and sums of deepLIFT contrib scores; 
@@ -115,7 +116,7 @@ def kfold_run_pipeline(model_module, model_params, X, y, nb_features, nb_classes
 '''
 * Totals up a list of list of sums to a list of sublist sums. 
 * Expects:
-    - a lists of list of sums (list_sums)
+    - list_sums = a lists of list of sums
 * Returns a list of sums.
 '''
 def compute_total_sums(list_sums):

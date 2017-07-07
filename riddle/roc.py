@@ -3,7 +3,7 @@ roc.py
 
 Provides functions for computing ROC AUC and plotting then saving ROC curves.
 
-Requires:   NumPy, SciPy, matplotlib, scikit-learn (and their dependencies)
+Requires:   NumPy, SciPy, Matplotlib, scikit-learn (and their dependencies)
 
 Author:     Ji-Sung Kim, Rzhetsky Lab
 Copyright:  2016, all rights reserved
@@ -34,7 +34,7 @@ np.random.seed(109971161161043253 % 8085) # for reproducibility
     - nb_classes = number of classes
 * Returns:
     - dictionary of ROC_AUC values
-    - dictinoary of FPR values 
+    - dictionary of FPR values 
     - dictionary ot TPR values
 '''
 def compute_roc(y_test, y_test_probas, nb_classes):

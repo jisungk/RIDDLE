@@ -3,7 +3,7 @@ other_clf.py
 
 Run various machine learning classifier pipelines.
 
-Requires:   Keras, numpy, scikit-learn, RIDDLE (and their dependencies)
+Requires:   Keras, NumPy, scikit-learn, RIDDLE (and their dependencies)
 
 Author:     Ji-Sung Kim, Rzhetsky Lab
 Copyright:  2016, all rights reserved
@@ -40,15 +40,15 @@ from kfold_pipeline import print_metrics
 ''' 
 * Run parameter search for various machine learning pipelines. 
 * Expects:
-    - data filepath (data_path).
-    - method (method)
-    - whether to do first half, last half, or the complete set of experiments; 
-      one of ('first', 'last', 'both')
-    - float proportion of data simulated to be missing (prop_missing)
-    - number of partitions for k-fold cross-validation (k)
-    - boolean whether to skip nonlinear SVM methods, only relevant if 'svm' is 
-      selected as the method (skip_nonlinear_svm)
-    - number of searches (nb_searches)
+    - data_path = data filepath
+    - method = method
+    - which_half = string setting for whether to do first half, last half, or 
+      the complete set of experiments; one of ('first', 'last', 'both')
+    - prop_missing = float proportion of data simulated to be missing
+    - k = number of partitions for k-fold cross-validation
+    - skip_nonlinear_svm = boolean whether to skip nonlinear SVM methods, 
+      only relevant if 'svm' is selected as the method
+    - nb_searches = number of searches
 '''
 def run(data_fn, method='lrfc', which_half='both', prop_missing=0.0, k=10, 
     skip_nonlinear_svm=False, nb_searches=20):
@@ -258,9 +258,9 @@ def run(data_fn, method='lrfc', which_half='both', prop_missing=0.0, k=10,
 > Command line arguments:
     + method = one of ('lrfc', 'svm')
     + data_fn = string data file name
-    + which_half = determines whether to do first half of experiments, last half,
-      or the complete set of experiments; one of ('first', 'last', 'both')
-    + prop_misisng = float proportion of data to randomly simulate as missing
+    + which_half = string setting for whether to do first half, last half, or 
+      the complete set of experiments; one of ('first', 'last', 'both')
+    + prop_missing = float proportion of data to randomly simulate as missing
 '''
 def main(args):
     try: method = args[1].lower()

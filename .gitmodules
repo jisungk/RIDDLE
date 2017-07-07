@@ -1,0 +1,3 @@
+[submodule "deeplift"]
+	path = deeplift
+	url = https://github.com/kundajelab/deeplift

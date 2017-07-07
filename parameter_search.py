@@ -1,9 +1,10 @@
 """
 parameter_search.py
 
-Search for optimal parameters for RIDDLE and various machine learning classifiers.
+Provides parameter tuning pipelines for RIDDLE and various scikit-learn 
+machine learning classifiers.
 
-Requires:   Keras, numpy, scikit-learn, RIDDLE (and their dependencies)
+Requires:   Keras, NumPy, scikit-learn, RIDDLE (and their dependencies)
 
 Author:     Ji-Sung Kim, Rzhetsky Lab
 Copyright:  2016, all rights reserved
@@ -52,7 +53,7 @@ def loss_scorer(estimator, x, y):
 ''' 
 * Get data for a machine learning pipeline. 
 * Expects:
-    - data filepath (data_path).
+    - data_path = data filepath
 * Returns:
     - data in standard X, y form (X, y)
     - list of permutation indices for shuffling (perm_indices)
@@ -92,8 +93,9 @@ def get_base_data(data_path, prop_missing):
 ''' 
 * Vectorizes data for input to the scikit-learn API.
 * Expects:
-    - data (X, y)
-    - number of features (nb_features)
+    - X = feature data
+    - y = class_data
+    - nb_features = number of features
 * Returns:
     - preprocessed data in standard X, y form (X, y)
 '''
@@ -109,9 +111,10 @@ def preproc_for_sklearn(X, y, nb_features):
 ''' 
 * Performs Chi2 feature selection, and gets indices of best features. 
 * Expects:
-    - data (X, y)
-    - number of features (nb_features)
-    - number of features to keep (nb_features_to_keep)
+    - X = feature data
+    - y = class_data
+    - nb_features = number of features
+    - nb_features_to_keep = number of features to keep
 * Returns:
     - list of selected feature indices (selected_indices)
 '''
@@ -129,26 +132,27 @@ def select_feats(X, y, nb_features, nb_features_to_keep=2048):
 ''' 
 * Performs parameter search to get best parameters. 
 * Expects:
-    - parameter tuning data (X_val, y_val)
-    - scikit-learn classifier (estimator)
-    - parameter search fucntion (search)
-    - search space, either a distribution or grid (dist_or_grid)
-    - additional arugments for parameter search function (**search_kwargs)
+    - X = feature data
+    - y = class_data
+    - estimator = scikit-learn classifier
+    - search = parameter search function
+    - dist_or_grid = search space, either a distribution or grid
+    - **search_kwargs = additional arugments for parameter search function
 * Returns:
     - dictionary of best parameters
 '''
-def parameter_search(X_val, y_val, estimator, search, dist_or_grid, **search_kwargs):
+def parameter_search(X, y, estimator, search, dist_or_grid, **search_kwargs):
     param_search = search(estimator, dist_or_grid, refit=False, **search_kwargs)
-    param_search.fit(X_val, y_val)
+    param_search.fit(X, y)
     return param_search.best_params_
 
 
 ''' 
 * Checks of parameter search has been done already. 
 * Expects:
-    - list of method names (names)
-    - string data filename (data_fn)
-    - float proportion of data simulated to be missing (prop_missing)
+    - names = list of method names
+    - data_fn = string data filename
+    - prop_missing = float proportion of data simulated to be missing
 * Returns:
     - boolean, true parameter search has already been done
 '''
@@ -164,17 +168,17 @@ def already_done(names, data_fn, prop_missing):
 ''' 
 * Run parameter search for various machine learning pipelines. 
 * Expects:
-    - data filepath (data_path)
-    - method (method)
-    - float proportion of data simulated to be missing (prop_missing)
-    - number of partitions for k-fold cross-validation (k)
-    - boolean whether to skip nonlinear SVM methods, only relevant if 'svm' is 
-      selected as the method (skip_nonlinear_svm)
-    - number of searches (nb_searches)
-    - maximum number of samples to be used (max_nb_samples)
+    - data_path = data filepath
+    - method = method
+    - prop_missing = float proportion of data simulated to be missing 
+    - k = number of partitions for k-fold cross-validation
+    - skip_nonlinear_svm = boolean whether to skip nonlinear SVM methods, 
+      only relevant if 'svm' is selected as the method
+    - nb_searches = number of searches
+    - max_nb_samples = maximum number of samples to be used
 '''
 def run(data_fn, method='lrfc', prop_missing=0.0, k=10, 
-    skip_nonlinear_svm=False, max_nb_samples=10000, nb_searches=20):
+    skip_nonlinear_svm=False, nb_searches=20, max_nb_samples=10000):
     if 'dummy' in data_fn or 'debug' in data_fn: nb_searches = 3
     data_path = '{}/{}'.format(DATA_DIR, data_fn)
 
@@ -307,7 +311,11 @@ def run(data_fn, method='lrfc', prop_missing=0.0, k=10,
     print('Finished parameter search for method: {}'.format(method))
 
 '''
-* Runs parameter searches for various machine learning pipelines.
+* * Runs parameter searches for various machine learning pipelines.
+> Command line arguments:
+    + method = method
+    + data_fn = string data file name
+    + prop_missing = float proportion of data to randomly simulate as missing
 '''
 def main(args):
     try: method = args[1].lower()

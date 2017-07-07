@@ -2,7 +2,7 @@
 pipeline.py
 
 A centralized pipeline for data acquisition, processing, model training, and 
-model testing using Keras & TensorFlow.
+model testing using RIDDLE. 
 
 Requires:   NumPy, scikit-learn, RIDDLE (and their dependencies)
 
@@ -35,8 +35,8 @@ def eprint(*args, **kwargs):
 '''
 * Pickles an object to file.
 * Expects:
-    - object (obj)
-    - filename (fn)
+    - obj = object
+    - fn = filename
 '''
 def pickle_object(obj, fn):
     with open(fn, 'w') as f:
@@ -47,9 +47,10 @@ def pickle_object(obj, fn):
   a sklearn classification report, and ROC curves. Prints and/or saves relevant
   information.
 * Expects:
-    - list of true targets (y_test)
-    - probability vectors (y_test_probas)
-    - parameters (nb_classes, directory, id_string, model_id).
+    - y_test = list of true targets
+    - y_test_probas = probability vectors
+    - nb_classes = number of classes
+    - path = string path where output plots should be saved
 '''
 def evaluate(y_test, y_test_probas, nb_classes, path):
     from riddle import roc # here so np can be seeded before run_pipeline() call
@@ -78,11 +79,13 @@ def evaluate(y_test, y_test_probas, nb_classes, path):
 * Run a full deep learning pipeline (acquire data, process, train, test, 
   evaluate). 
 * Expects:
-    - module (model_module) which contains functions to:
-        + initialize a Keras Sequential model (model_module.create_base_model)
+    - model_module = module which contains functions to:
+        + initalize a compiled Keras Sequential model 
+          (model_module.create_base_model)
         + process feature data to appropriate form (model_module.process_X_data)
         + process class data to appropriate form (model_module.process_y_data)
-    - a dictionary of the train, validation, and test data (data_partition_dict)
+    - best_model_param = dictionary of best parameters for model_module
+    - data_partition_dict = dictionary of the train, validation, and test data
       which should have these keys (with the appropriate value):
         + X_train
         + y_train
@@ -90,7 +93,11 @@ def evaluate(y_test, y_test_probas, nb_classes, path):
         + y_val
         + X_test
         + y_test
-    - parameters (out_directory, id_string)
+    - nb_features = number of features
+    - nb_classes = number of classes
+    - interpret_model = boolean whether to compute feature importance scores
+    - out_directory = string path where output should be saved
+    - max_nb_epoch = maximum number of epochs
 * Return
     - tuple of metrics (loss, accuracy, runtime) 
     - tuple of sums of differences and sums of deepLIFT contrib scores; 

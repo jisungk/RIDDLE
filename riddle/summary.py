@@ -10,8 +10,7 @@ Copyright:  2016, all rights reserved
 from __future__ import print_function
 import sys
 
-def eprint(*args, **kwargs): 
-    print(*args, file=sys.stderr, **kwargs) 
+from .utils import eprint
 
 '''
 Helper class which stores lists using an OrderedDictionary to maintain the order

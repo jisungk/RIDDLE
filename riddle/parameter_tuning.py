@@ -89,7 +89,7 @@ class UniformIntegerLogSpace(UniformLogSpace):
 ''' 
 * Creates all possible combinations from a grid of parameters.
 * Expects:
-    - grid of parameters (param_grid)
+    - param_grid = grid of parameters
 * Returns:
     - list of dictionaries representing setting combinations
 '''
@@ -118,14 +118,20 @@ def param_combinations(param_grid):
 ''' 
 * Finds optimal parameters using exhaustive grid search.
 * Expects:
-    - model module (model_module)
-    - dictionary grid of parameters (param_grid)
-    - all data used for parameter tuning (X, y)
-    - numbers of features (nb_features) and classes (nb_classes)
-    - number of partitions for k-fold cross-validation (k)
-    - arguments for data processing functions (process_X_data_func_args, 
-      process_y_data_func_args)
-    - maximum number of samples to be used (max_nb_samples)
+    - model_module = model module
+    - param_grid = dictionary grid of parameters
+    - X = feature data
+    - y = class data 
+    - nb_features = number of features
+    - nb_classes = number of classes
+    - k = number of partitions for k-fold cross-validation
+    - process_X_data_func = function to process feature data
+    - process_y_data_func = function to process class data
+    - process_X_data_func_args = additional arguments for process_X_data_func(); 
+      note: X is already passed as the first argument
+    - process_y_data_func_args = additional arguments for process_y_data_func(); 
+      note: y is already passed as the first argument
+    - max_nb_samples = maximum number of samples to be used
 * Returns:
     - dictionary of best parameters
 '''
@@ -204,15 +210,21 @@ def grid_search(model_module, param_grid, X, y, nb_features, nb_classes,
 ''' 
 * Finds optimal parameters using random grid search.
 * Expects:
-    - model module (model_module)
+    - model_module = model module
     - dictionary of parameter distributions (param_dist)
-    - all data used for parameter tuning (X, y)
-    - numbers of features (nb_features) and classes (nb_classes)
-    - number of partitions for k-fold cross-validation (k)
-    - arguments for data processing functions (process_X_data_func_args, 
-      process_y_data_func_args)
-    - maximum number of samples to be used (max_nb_samples)
-    - number of searches (nb_searches)
+    - X = feature data
+    - y = class data 
+    - nb_features = number of features
+    - nb_classes = number of classes
+    - k = number of partitions for k-fold cross-validation
+    - process_X_data_func = function to process feature data
+    - process_y_data_func = function to process class data
+    - process_X_data_func_args = additional arguments for process_X_data_func(); 
+      note: X is already passed as the first argument
+    - process_y_data_func_args = additional arguments for process_y_data_func(); 
+      note: y is already passed as the first argument
+    - max_nb_samples = maximum number of samples to be used
+    - nb_searches = number of searches
 * Returns:
     - dictionary of best parameters
 '''

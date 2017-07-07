@@ -3,7 +3,8 @@ emr.py
 
 Preprocesses EMR data files. Files should have 1 case per line and be space 
 delimited; each case begins with the age, ethnicity class, gender, then 
-subsequent ICD9 codes. Does not perform vectorization (e.g., one-hot-encoding).
+subsequent ICD9 codes. Does not perform vectorization (e.g., one-hot or binary
+encoding).
 
 Author: Ji-Sung Kim (Rzhetksy Lab)
 Copyright:  2016, all rights reserved

@@ -1,7 +1,7 @@
 """
 ordering.py
 
-Creates orderings of classes based on various scores (feature contribution
+Creates orderings of classes based on various scores (DeepLIFT contribution
 scores, feature frequency, proportion of samples exhbiting a feature).
 
 Requires:   NumPy (and its dependencies)

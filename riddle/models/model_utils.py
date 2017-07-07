@@ -46,6 +46,10 @@ def chunks(l, n):
     - process_y_data_func = function to process class data
     - nb_features = number of features
     - nb_classes = number of classes
+    - process_X_data_func_args = additional arguments for process_X_data_func(); 
+      note: X is already passed as the first argument
+    - process_y_data_func_args = additional arguments for process_y_data_func(); 
+      note: y is already passed as the first argument
     - max_nb_epoch = maximum number of training epochs permitted
     - batch_size = number of samples per batch
     - patience = number of unhelpful epochs to tolerate
@@ -145,6 +149,10 @@ def train(model, X_train, y_train, X_val, y_val, process_X_data_func,
     - process_y_data_func = function to process class data for modeling
     - nb_features = number of features
     - nb_classes = number of classes
+    - process_X_data_func_args = additional arguments for process_X_data_func(); 
+      note: X is already passed as the first argument
+    - process_y_data_func_args = additional arguments for process_y_data_func(); 
+      note: y is already passed as the first argument
     - batch_size = number of samples per batch
 * Returns:
     - test loss
@@ -215,15 +223,17 @@ def save_test_results(y_test_probas, y_test, path):
 * Gets an array of probability predictions from some input feature data, 
   using the given Keras model.
 * Expects:
-    - model = trained Keras model
+    - model = compiled & trained Keras model
     - X_test = features of non-vectorized, encoded testing data
     - process_X_data_func = function to process feature data
+    - process_X_data_func_args = additional arguments for process_X_data_func(); 
+      note: X is already passed as the first argument
 * Returns:
     - 2D array of predicted probabilities; rows (first index) represent samples, 
       columns (second index) represent class indices
 '''
 def predict_proba(model, X_test, process_X_data_func=None, 
-    process_X_data_func_arg={}):
+    process_X_data_func_args={}):
     if process_X_data_func is not None:
         X_test = process_X_data_func(X_test, **process_X_data_func_args)
 
@@ -246,8 +256,10 @@ def probas_to_preds(probas):
   input feature data, using the given Keras model.
 * Expects:
     - model = trained Keras model
-    - X_test = unvectorized features
+    - X_test = features of non-vectorized, encoded testing data
     - process_X_data_func = function to process feature data
+    - process_X_data_func_args = additional arguments for process_X_data_func(); 
+      note: X is already passed as the first argument
 * Returns:
     - vector of integer indices of predicted classes
 '''
@@ -257,7 +269,8 @@ def predict(model, X, process_X_data_func=None, process_X_data_func_args={}):
     return probas_to_preds(probas)
 
 '''
-* Saves to file a compiled Keras model via HDF5.
+* Saves to file a compiled Keras model via HDF5. Requires HDF5 along with
+  the Python library h5py to be installed. 
 * Expects:
     - model = compiled Keras model
     - path = filepath where model should be saved
@@ -266,7 +279,8 @@ def save_model(model, path):
     model.save(path)
 
 '''
-* Loads from file a saved Keras model via HDF5.
+* Loads from file a saved Keras model via HDF5. (Probably) requires HDF5 along
+  with the Python library h5py to be installed. 
 * Expects:
     - path = filepath where model should be loaded from
 * Returns:

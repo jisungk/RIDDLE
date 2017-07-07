@@ -1,7 +1,8 @@
 """
 deep_mlp.py
 
-Everything you need to train a deep multilayer perceptron (deep MLP).
+Everything you need to train a deep multilayer perceptron (deep MLP) using
+the RIDDLE library. 
 
 Requires:   NumPy, Keras (and their dependencies)
 
@@ -19,16 +20,14 @@ from keras.utils import np_utils
 from keras.preprocessing.text import Tokenizer  
 from keras.regularizers import l2
 
-# --------------------------------- SETTINGS --------------------------------- #
-
 # -------------------------------- FUNCTIONS --------------------------------- #
 
 '''
-* Provides the architecture for a deep MLP model.
+* Provides the architecture for a deep MLP model as a compiled Keras model.
 * Expects:
     - nb_features = number of features
     - nb_classes = number of classes
-    - nb_additional_hidden_layers = number of additional hidden layers
+    - learning_rate = learning rate
 * Returns:
     - Keras Sequential model configuration as a JSON string 
 '''
@@ -55,7 +54,7 @@ def create_base_model(nb_features, nb_classes, learning_rate=0.02):
     return model
 
 '''
-* Processes feature data (X) for input to a deep MLP a la one-hot encoding.
+* Processes feature data (X) for input to a deep MLP via binary encoding. 
 * Expects:
     - X = feature data as a list of list of feature indices
         e.g., [[1, 3, 4], [4, 2, 5, 1, 3], [0]]
@@ -70,7 +69,7 @@ def process_X_data(X, nb_features):
     return tokenizer.sequences_to_matrix(X, mode='binary')
 
 '''
-* Processes class data (y) for input to a deep MLP a la one-hot encoding.
+* Processes class data (y) for input to a deep MLP via one-hot encoding. 
 * Expects:
     - y = class data as a list of class indices
         e.g., [1, 0, 3]

@@ -1,0 +1,30 @@
+sudo: required
+dist: trusty
+language: python
+matrix:
+    include:
+        - python: 2.7
+          env: KERAS_BACKEND=tensorflow 
+    include:
+        - python: 2.7
+          env: KERAS_BACKEND=theano 
+          
+before_install:
+    - sudo apt-get install libhdf5-serial-dev
+
+install:
+    - pip install theano
+    - pip install tensorflow
+    - pip install keras
+    - pip install sklearn
+    - pip install numpy
+    - pip install scipy
+    - pip install matplotlib
+    - pip install h5py
+
+before_script:
+    - python -c "from keras import backend"
+    - git submodule update --init --recursive
+
+script:
+    - PYTHONPATH=$PWD:$PYTHONPATH pytest
