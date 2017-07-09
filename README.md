@@ -1,5 +1,5 @@
 ![RIDDLE: Race and ethnicity Imputation from Disease history with Deep LEarning (RIDDLE)](https://user-images.githubusercontent.com/9053987/27894953-4aff74e6-61c4-11e7-901a-8a459026b4ee.png)  
-[![Build Status](https://travis-ci.org/jisungk/riddle.svg?branch=master)](https://travis-ci.org/jisungk/riddle) 
+[![Build Status](https://travis-ci.org/jisungk/RIDDLE.svg?branch=master)](https://travis-ci.org/jisungk/RIDDLE) 
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://github.com/jisungk/riddle/blob/master/LICENSE)
 
 **RIDDLE** (**R**ace and ethnicity **I**mputation from **D**isease history with **D**eep **LE**arning) is an open-source Python2 library for using deep learning to impute race and ethnicity information in anonymized electronic medical records (EMRs). RIDDLE provides the ability to (1) build models for estimating race and ethnicity from clinical features, and (2) interpret trained models to describe how specific features contribute to predictions. The RIDDLE library implements the methods introduced in ["RIDDLE: Race and ethnicity Imputation from Disease history with Deep LEarning"](https://arxiv.org/abs/1707.01623) (arXiv preprint, 2017).
