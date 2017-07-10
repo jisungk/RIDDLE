@@ -179,7 +179,7 @@ def grid_search(model_module, param_grid, X, y, nb_features, nb_classes,
                 process_y_data_func_args=process_y_data_func_args,
                 verbose=False)
 
-            (loss, acc), y_test_probas = test(model, X_test, 
+            (loss, acc), y_test_proba = test(model, X_test, 
                 y_test, process_X_data_func, process_y_data_func, 
                 nb_features=nb_features, nb_classes=nb_classes, 
                 process_X_data_func_args=process_X_data_func_args,
@@ -251,7 +251,7 @@ def random_search(model_module, param_dist, X, y, nb_features,
         param_set = {}
         for param, values in param_dist.items():
             if hasattr(values, '__getitem__'): # list
-                param_set[param] = values[np.random.randint(0, len(v))]
+                param_set[param] = values[np.random.randint(0, len(values))]
             elif hasattr(values, 'rvs'): # distributino
                 param_set[param] = values.rvs()
             else: # single item
@@ -280,7 +280,7 @@ def random_search(model_module, param_dist, X, y, nb_features,
                 process_y_data_func_args=process_y_data_func_args,
                 verbose=False)
 
-            (loss, acc), y_test_probas = test(model, X_test, 
+            (loss, acc), y_test_proba = test(model, X_test, 
                 y_test, process_X_data_func, process_y_data_func, 
                 nb_features=nb_features, nb_classes=nb_classes, 
                 process_X_data_func_args=process_X_data_func_args,

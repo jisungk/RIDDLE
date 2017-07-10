@@ -48,14 +48,14 @@ def pickle_object(obj, fn):
   information.
 * Expects:
     - y_test = list of true targets
-    - y_test_probas = probability vectors
+    - y_test_proba = probability vectors
     - nb_classes = number of classes
     - path = string path where output plots should be saved
 '''
-def evaluate(y_test, y_test_probas, nb_classes, path):
+def evaluate(y_test, y_test_proba, nb_classes, path):
     from riddle import roc # here so np can be seeded before run_pipeline() call
 
-    y_pred = [np.argmax(p) for p in y_test_probas]
+    y_pred = [np.argmax(p) for p in y_test_proba]
 
     print('Confusion matrix:')
     print(confusion_matrix(y_test, y_pred))
@@ -65,7 +65,7 @@ def evaluate(y_test, y_test_probas, nb_classes, path):
     print(classification_report(y_test, y_pred, digits=3))
 
     print('ROC AUC values:')
-    roc_auc, fpr, tpr = roc.compute_roc(y_test, y_test_probas, 
+    roc_auc, fpr, tpr = roc.compute_roc(y_test, y_test_proba, 
         nb_classes=nb_classes)
     roc.save_plots(roc_auc, fpr, tpr, nb_classes=nb_classes, path=path)
 
@@ -147,7 +147,7 @@ def run_pipeline(model_module, best_model_param, data_partition_dict,
         max_nb_epoch=max_nb_epoch)
 
     # -------------------------- TEST/EVALUATE MODEL ------------------------- #
-    (loss, acc), y_test_probas = models.test(model, X_test, 
+    (loss, acc), y_test_proba = models.test(model, X_test, 
         y_test, process_X_data_func, process_y_data_func, nb_features=nb_features, 
         nb_classes=nb_classes, process_X_data_func_args=process_X_data_func_args,
         process_y_data_func_args=process_y_data_func_args)
@@ -159,11 +159,11 @@ def run_pipeline(model_module, best_model_param, data_partition_dict,
 
     # save results
     test_results_path = out_directory + '/test_results.txt'
-    models.save_test_results(y_test_probas, y_test, path=test_results_path)
+    models.save_test_results(y_test_proba, y_test, path=test_results_path)
     
     # evaluate model performance
     roc_graph_path = out_directory + '/roc.png'
-    evaluate(y_test, y_test_probas, nb_classes=nb_classes, path=roc_graph_path)
+    evaluate(y_test, y_test_proba, nb_classes=nb_classes, path=roc_graph_path)
 
     # ------------------------ FEATURE IMPORTANCE PREP ----------------------- #
     start = time.time()

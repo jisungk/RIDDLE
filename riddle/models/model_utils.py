@@ -167,7 +167,7 @@ def test(model, X_test, y_test, process_X_data_func, process_y_data_func,
         print('{} test batches'
             .format(int(ceil(float(len(X_test)) / batch_size))))
 
-    test_probas = np.empty([0, nb_classes])
+    test_proba = np.empty([0, nb_classes])
 
     # testing by batch
     test_losses, test_accs, test_weights = [], [], []
@@ -183,12 +183,12 @@ def test(model, X_test, y_test, process_X_data_func, process_y_data_func,
         y = process_y_data_func(y, **process_y_data_func_args)
 
         batch_loss, batch_acc = model.test_on_batch(X, y)
-        batch_probas = model.predict_proba(X, batch_size=batch_size, 
+        batch_proba = model.predict_proba(X, batch_size=batch_size, 
             verbose=0)
 
         test_losses.append(batch_loss)
         test_accs.append(batch_acc)
-        test_probas = np.append(test_probas, batch_probas, axis=0)
+        test_proba = np.append(test_proba, batch_proba, axis=0)
         test_weights.append(w)
 
     test_loss = np.average(test_losses, weights=test_weights)
@@ -199,19 +199,19 @@ def test(model, X_test, y_test, process_X_data_func, process_y_data_func,
             .format(test_loss, test_acc))
         print()
     
-    return (test_loss, test_acc), test_probas
+    return (test_loss, test_acc), test_proba
 
 '''
 * Saves test results (softmax output, true label) to a file.
 * Expects:
-    - y_test_probas = 2D array of predicted probabilities; rows (first index) 
+    - y_test_proba = 2D array of predicted probabilities; rows (first index) 
       represent samples, columns (second index) represent class indices
     - y_test = list of true classes
     - path = filepath where the file is saved
 '''
-def save_test_results(y_test_probas, y_test, path):
+def save_test_results(y_test_proba, y_test, path):
     with open(path, 'w+') as f:
-        for prob_vector, target in zip(y_test_probas, y_test):
+        for prob_vector, target in zip(y_test_proba, y_test):
             for idx, p in enumerate(prob_vector):
                 if idx != 0: f.write('\t')
                 f.write(str(p))
@@ -243,13 +243,13 @@ def predict_proba(model, X_test, process_X_data_func=None,
 * Converts an array of probability predictions to predictions (index
   of predicted class), by choosing the class with highest probability.
 * Expects:
-    - probas = 2D array of predicted probabilities; rows (first index) 
+    - probabilities = 2D array of predicted probabilities; rows (first index) 
       represent samples, columns (second index) represent class indices
 * Returns:
     - vector of integer indices of predicted classes
 '''
-def probas_to_preds(probas):
-    return np.argmax(probas, axis=1)
+def proba_to_pred(proba):
+    return np.argmax(proba, axis=1)
 
 '''
 * Gets an array of predictions (index of predicted class) from some 
@@ -264,9 +264,9 @@ def probas_to_preds(probas):
     - vector of integer indices of predicted classes
 '''
 def predict(model, X, process_X_data_func=None, process_X_data_func_args={}):
-    probas = predict_probas(model, X, process_X_data_func, 
+    proba = predict_proba(model, X, process_X_data_func, 
         process_X_data_func_args=process_X_data_func_args)
-    return probas_to_preds(probas)
+    return proba_to_pred(proba)
 
 '''
 * Saves to file a compiled Keras model via HDF5. Requires HDF5 along with

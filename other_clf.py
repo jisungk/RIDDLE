@@ -137,8 +137,8 @@ def run(data_fn, method='lrfc', which_half='both', prop_missing=0.0, k=10,
                 **logit_params[k_idx])
             logit.fit(X_train, y_train)
             logit_acc = accuracy_score(y_test, logit.predict(X_test))
-            logit_y_test_probas = logit.predict_proba(X_test)
-            logit_loss = log_loss(y_test, logit_y_test_probas)
+            logit_y_test_proba = logit.predict_proba(X_test)
+            logit_loss = log_loss(y_test, logit_y_test_proba)
             logit_time = time.time() - start
             print('Logistic regression / loss: {:.3f} / accuracy: {:.3f} / time: {:.3f} s'
                 .format(logit_loss, logit_acc, logit_time))
@@ -148,15 +148,15 @@ def run(data_fn, method='lrfc', which_half='both', prop_missing=0.0, k=10,
             rfc = RandomForestClassifier(**rfc_params[k_idx])
             rfc.fit(X_train, y_train)
             rfc_acc = accuracy_score(y_test, rfc.predict(X_test))
-            rfc_y_test_probas = rfc.predict_proba(X_test)
-            rfc_loss = log_loss(y_test, rfc_y_test_probas)
+            rfc_y_test_proba = rfc.predict_proba(X_test)
+            rfc_loss = log_loss(y_test, rfc_y_test_proba)
             rfc_time = time.time() - start
             print('Random forest / loss: {:.3f} / accuracy: {:.3f} / time: {:.3f} s'
                 .format(rfc_loss, rfc_acc, rfc_time))
             
-            save_test_results(logit_y_test_probas, y_test, 
+            save_test_results(logit_y_test_proba, y_test, 
                 '{}/test_results.txt'.format(get_results_dir('logit', k_idx)))
-            save_test_results(rfc_y_test_probas, y_test, 
+            save_test_results(rfc_y_test_proba, y_test, 
                 '{}/test_results.txt'.format(get_results_dir('rfc', k_idx)))
             # joblib.dump(logit, get_results_dir('logit', k_idx) + '/clf.pkl')
             # joblib.dump(rfc, get_results_dir('rfc', k_idx) + '/clf.pkl')
@@ -178,13 +178,13 @@ def run(data_fn, method='lrfc', which_half='both', prop_missing=0.0, k=10,
                 **linear_svm_params[k_idx])
             linear_svm.fit(X_train, y_train)
             linear_svm_acc = accuracy_score(y_test, linear_svm.predict(X_test))
-            linear_svm_y_test_probas = linear_svm.predict_proba(X_test)
-            linear_svm_loss = log_loss(y_test, linear_svm_y_test_probas)
+            linear_svm_y_test_proba = linear_svm.predict_proba(X_test)
+            linear_svm_loss = log_loss(y_test, linear_svm_y_test_proba)
             linear_svm_time = time.time() - start
             print('Linear SVM / accuracy: {:.3f} / loss: {:.3f} / time: {:.3f} s'
                 .format(linear_svm_acc, linear_svm_loss, linear_svm_time))
 
-            save_test_results(linear_svm_y_test_probas, y_test, 
+            save_test_results(linear_svm_y_test_proba, y_test, 
                 '{}/test_results.txt'.format(get_results_dir('linear-svm', k_idx)))
             # joblib.dump(linear_svm, get_results_dir('linear-svm', k_idx) + '/clf.pkl')
 
@@ -200,8 +200,8 @@ def run(data_fn, method='lrfc', which_half='both', prop_missing=0.0, k=10,
                 **poly_svm_params[k_idx])
             poly_svm.fit(X_train, y_train)
             poly_svm_acc = accuracy_score(y_test, poly_svm.predict(X_test))
-            poly_svm_y_test_probas = poly_svm.predict_proba(X_test)
-            poly_svm_loss = log_loss(y_test, poly_svm_y_test_probas)
+            poly_svm_y_test_proba = poly_svm.predict_proba(X_test)
+            poly_svm_loss = log_loss(y_test, poly_svm_y_test_proba)
             poly_svm_time = time.time() - start
             print('Polynomial SVM / accuracy: {:.3f} / loss: {:.3f} / time: {:.3f} s'
                 .format(poly_svm_acc, poly_svm_loss, poly_svm_time))
@@ -212,15 +212,15 @@ def run(data_fn, method='lrfc', which_half='both', prop_missing=0.0, k=10,
                 **rbf_svm_params[k_idx])
             rbf_svm.fit(X_train, y_train)
             rbf_svm_acc = accuracy_score(y_test, rbf_svm.predict(X_test))
-            rbf_svm_y_test_probas = rbf_svm.predict_proba(X_test)
-            rbf_svm_loss = log_loss(y_test, rbf_svm_y_test_probas)
+            rbf_svm_y_test_proba = rbf_svm.predict_proba(X_test)
+            rbf_svm_loss = log_loss(y_test, rbf_svm_y_test_proba)
             rbf_svm_time = time.time() - start
             print('RBF SVM / accuracy: {:.3f} / loss: {:.3f} / time: {:.3f} s'
                 .format(rbf_svm_acc, rbf_svm_loss, rbf_svm_time))
 
-            save_test_results(poly_svm_y_test_probas, y_test, 
+            save_test_results(poly_svm_y_test_proba, y_test, 
                 '{}/test_results.txt'.format(get_results_dir('poly-svm', k_idx)))
-            save_test_results(rbf_svm_y_test_probas, y_test, 
+            save_test_results(rbf_svm_y_test_proba, y_test, 
                 '{}/test_results.txt'.format(get_results_dir('rbf-svm', k_idx)))
             # joblib.dump(poly_svm, get_results_dir('poly-svm', k_idx) + '/clf.pkl')
             # joblib.dump(rbf_svm, get_results_dir('rbf-svm', k_idx) + '/clf.pkl')

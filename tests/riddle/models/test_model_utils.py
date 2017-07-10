@@ -18,7 +18,7 @@ from itertools import izip
 
 import numpy as np
 
-from riddle.models.model_utils import (chunks, probas_to_preds)
+from riddle.models.model_utils import (chunks, proba_to_pred)
 
 class TestModelUtils():
     def test_chunks(self):
@@ -36,8 +36,8 @@ class TestModelUtils():
                 assert a == [9, 10]
                 assert b == [2, 1]
 
-    def test_probas_to_preds(self):
-        probas = np.asarray([[0.5, 0.3, 0.1, 0.1], [0.1, 0.1, 0.1, 0.99], 
+    def test_proba_to_pred(self):
+        proba = np.asarray([[0.5, 0.3, 0.1, 0.1], [0.1, 0.1, 0.1, 0.99], 
             [0.3, 0.3, 15, 3]])
-        assert np.all(np.equal(probas_to_preds(probas), np.asarray([0, 3, 2])))
+        assert np.all(np.equal(proba_to_pred(proba), np.asarray([0, 3, 2])))
     

@@ -18,7 +18,6 @@ from keras.layers.advanced_activations import PReLU
 from keras.optimizers import Adam
 from keras.utils import np_utils  
 from keras.preprocessing.text import Tokenizer  
-from keras.regularizers import l2
 
 # -------------------------------- FUNCTIONS --------------------------------- #
 

@@ -30,24 +30,24 @@ np.random.seed(109971161161043253 % 8085) # for reproducibility
 * Computes ROC_AUC for each class.
 * Expects:
     - y_test = list of true class indices
-    - y_test_probas = list of predicted probability vectors
+    - y_test_proba = list of predicted probability vectors
     - nb_classes = number of classes
 * Returns:
     - dictionary of ROC_AUC values
     - dictionary of FPR values 
     - dictionary ot TPR values
 '''
-def compute_roc(y_test, y_test_probas, nb_classes):
+def compute_roc(y_test, y_test_proba, nb_classes):
     y_test = label_binarize(y_test, classes=range(0, nb_classes))
 
     fpr, tpr, roc_auc = {}, {}, {}
     for i in range(nb_classes):
-        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_test_probas[:, i])
+        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_test_proba[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
     # Compute micro-average ROC curve and ROC area
     fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), 
-        y_test_probas.ravel())
+        y_test_proba.ravel())
     roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
     return roc_auc, fpr, tpr
