@@ -22,13 +22,13 @@ setup(
     description='Race and ethnicity Imputation from Disease history with Deep LEarning',
     long_description=long_description,
     author='Ji-Sung Kim',
-    author_email='jisungk (at) cs.princeton.edu',
+    author_email='hello (at) jisungkim.com',
     url='https://riddle.ai',
     license='Apache 2.0',
     packages=find_packages(exclude=['tests*']),
-    install_requires=['keras', 'tensorflow', 'sklearn', 'numpy', 'scipy', 
+    install_requires=['keras', 'tensorflow', 'sklearn', 'numpy', 'scipy',
         'matplotlib', 'h5py'],
-    keywords = ['deep learning', 'machine learning', 'neural networks', 
-        'imputation', 'emr', 'epidemiology', 'biomedicine', 'biology', 
+    keywords = ['deep learning', 'machine learning', 'neural networks',
+        'imputation', 'emr', 'epidemiology', 'biomedicine', 'biology',
         'computational bioloigy', 'bioinformatics']
 )

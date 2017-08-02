@@ -54,7 +54,7 @@ Please refer to the example data file `dummy.txt` and the accompanying `README` 
 
 [Ji-Sung Kim](http://jisungkim.com)  
 Princeton University  
-*jisungk (at) cs.princeton.edu*
+*hello (at) jisungkim.com*
 
 [Andrey Rzhetsky](https://scholar.google.com/citations?user=HXCMYLsAAAAJ&hl=en), Edna K. Papazian Professor  
 University of Chicago  
