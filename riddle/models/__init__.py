@@ -1,4 +1,6 @@
+"""Models submodule."""
+
 from __future__ import absolute_import
 
-from .model_utils import *
-from . import deep_mlp
+from .mlp import MLP
+from .model import *

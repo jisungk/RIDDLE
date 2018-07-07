@@ -1,346 +1,302 @@
-"""
-parameter_search.py
+"""parameter_search.py
 
-Provides parameter tuning pipelines for RIDDLE and various scikit-learn 
-machine learning classifiers.
+Search for optimal parameters for RIDDLE and various ML classifiers.
 
 Requires:   Keras, NumPy, scikit-learn, RIDDLE (and their dependencies)
 
 Author:     Ji-Sung Kim, Rzhetsky Lab
-Copyright:  2016, all rights reserved
+Copyright:  2018, all rights reserved
 """
 
 from __future__ import print_function
 
-import sys; sys.dont_write_bytecode = True
+import argparse
 import os
 import pickle
 import time
-
-FORCE_RUN = False
-DATA_DIR = '_data'
-CACHE_DIR = '_cache'
-SEED = 109971161161043253 % 8085
+import warnings
 
 import numpy as np
-np.random.seed(SEED) # for reproducibility, must be before Keras imports!
-from keras.preprocessing.text import Tokenizer
-from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, log_loss
-from sklearn.feature_selection import SelectKBest, chi2
+from sklearn.metrics import log_loss
+from sklearn.model_selection import RandomizedSearchCV
 
-from riddle import emr, models, parameter_tuning
-from riddle.parameter_tuning import UniformLogSpace, UniformInteger
-from pipeline import eprint, pickle_object
+from riddle import emr
+from riddle import tuning
+from riddle.models import MLP
 
-# -------------------------- HELPER FUNCTIONS -------------------------------- #
+from utils import get_param_path
+from utils import get_preprocessed_data
+from utils import recursive_mkdir
+from utils import select_features
+from utils import subset_reencode_features
+from utils import vectorize_features
 
-''' 
-* Scoring function representing negative loss; used for scikit-learn model
-  selection. 
-'''
+SEED = 109971161161043253 % 8085
+TUNING_K = 3  # number of partitions to use to evaluate a parameter config
+
+parser = argparse.ArgumentParser(
+    description='Perform parameter search for various classification methods.')
+parser.add_argument(
+    '--method', type=str, default='riddle',
+    help='Classification method to use.')
+parser.add_argument(
+    '--data_fn', type=str, default='dummy.txt',
+    help='Filename of text data file.')
+parser.add_argument(
+    '--prop_missing', type=float, default=0.0,
+    help='Proportion of feature observations to simulate as missing.')
+parser.add_argument(
+    '--max_num_feature', type=int, default=-1,
+    help='Maximum number of features to use; with the default of -1, use all'
+         'available features')
+parser.add_argument(
+    '--feature_selection', type=str, default='random',
+    help='Method to use for feature selection.')
+parser.add_argument(
+    '--force_run', type=bool, default=False,
+    help='Whether to force parameter search to run even if it has been already'
+         'performed.')
+parser.add_argument(
+    '--max_num_sample', type=int, default=10000,
+    help='Maximum number of samples to use during parameter tuning.')
+parser.add_argument(
+    '--num_search', type=int, default=5,
+    help='Number of parameter settings (searches) to try.')
+parser.add_argument(
+    '--data_dir', type=str, default='_data',
+    help='Directory of data files.')
+parser.add_argument(
+    '--cache_dir', type=str, default='_cache',
+    help='Directory where to cache files and outputs.')
+
+
 def loss_scorer(estimator, x, y):
+    """Negative log loss scoring function for scikit-learn model selection."""
     loss = log_loss(y, estimator.predict_proba(x))
     assert loss >= 0
-    # minimal loss is best
-    # however, we try to maximize the score
-    # to account for this we take negative loss
-    return -loss
+    # we want to minimize loss; since scikit-learn model selection tries to
+    # maximize a given score, return the negative of the loss
+    return -1 * loss
 
-''' 
-* Get data for a machine learning pipeline. 
-* Expects:
-    - data_path = data filepath
-* Returns:
-    - data in standard X, y form (X, y)
-    - list of permutation indices for shuffling (perm_indices)
-    - numbers of features and classes (nb_features, nb_classes)
-'''
-def get_base_data(data_path, prop_missing):
-    icd9_descript_path = '{}/{}'.format(DATA_DIR, 'phewas_codes.txt')
 
-    # load data
-    print('Loading data...')
+def run(method, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
+        num_class, max_num_sample, feature_selection, k_idx, k, num_search,
+        perm_indices):
+    """Run a parameter search for a single k-fold partitions
+
+    Arguments:
+        method: string
+            name of classification method; values = {'logit', 'random_forest',
+            'linear_svm', 'poly_svm', 'rbf_svm', 'gbdt', 'riddle'}
+        x_unvec: [[int]]
+            feature indices that have not been vectorized; each inner list
+            collects the indices of features that are present (binary on)
+            for a sample
+        y: [int]
+            list of class labels as integer indices
+        idx_feat_dict: {int: string}
+            dictionary mapping feature indices to features
+        num_feature: int
+            number of features present in the dataset
+        max_num_feature: int
+            maximum number of features to use
+        num_class: int
+            number of classes present
+        feature_selection: string
+            feature selection method; values = {'random', 'frequency', 'chi2'}
+        k_idx: int
+            index of the k-fold partition to use
+        k: int
+            number of partitions for k-fold cross-validation
+        num_search: int
+            number of searches (parameter configurations) to try
+        perm_indices: np.ndarray, int
+            array of indices representing a permutation of the samples with
+            shape (num_sample, )
+
+    Returns:
+        best_param: {string: ?}
+            dictionary mapping parameter names to the best values found
+    """
+    print('-' * 72)
+    print('Partition k = {}'.format(k_idx))
+
+    x_train_unvec, y_train, x_val_unvec, y_val, _, _ = (
+        emr.get_k_fold_partition(x_unvec, y, k_idx=k_idx, k=k,
+                                 perm_indices=perm_indices))
+
+    if max_num_feature > 0:  # select features and re-encode
+        feat_encoding_dict, _ = select_features(
+            x_train_unvec, y_train, idx_feat_dict,
+            method=feature_selection, num_feature=num_feature,
+            max_num_feature=max_num_feature)
+        x_val_unvec = subset_reencode_features(x_val_unvec, feat_encoding_dict)
+        num_feature = max_num_feature
+
+    # cap number of validation samples
+    if max_num_sample != None and len(x_val_unvec) > max_num_sample:
+        x_val_unvec = x_val_unvec[0:max_num_sample]
+        y_val = y_val[0:max_num_sample]
+
     start = time.time()
+    if method == 'riddle':
+        model_class = MLP
+        init_args = {'num_feature':num_feature, 'num_class': num_class}
+        param_dist = {
+            'num_hidden_layer': 2,  # [1, 2]
+            'num_hidden_node': 512,  # [128, 256, 512]
+            'activation': ['prelu', 'relu'],
+            'dropout': tuning.Uniform(lo=0.2, hi=0.8),
+            'learning_rate': tuning.UniformLogSpace(10, lo=-6, hi=-1),
+            }
+        best_param = tuning.random_search(
+            model_class, init_args, param_dist, x_val_unvec, y_val,
+            num_class=num_class, k=TUNING_K, num_search=num_search)
+    else:  # scikit-learn methods
+        x_val = vectorize_features(x_val_unvec, num_feature)
 
-    # get common data
-    icd9_descript_dict = emr.get_icd9_descript_dict(icd9_descript_path) 
-    X, y, idx_feat_dict, idx_class_dict = emr.get_data(path=data_path, 
-        icd9_descript_dict=icd9_descript_dict, prop_missing=prop_missing)
+        if method == 'logit':  # logistic regression
+            from sklearn.linear_model import LogisticRegression
+            estimator = LogisticRegression(multi_class='multinomial',
+                                           solver='lbfgs')
+            param_dist = {'C': tuning.UniformLogSpace(base=10, lo=-3, hi=3)}
+        elif method == 'random_forest':
+            from sklearn.ensemble import RandomForestClassifier
+            estimator = RandomForestClassifier()
+            param_dist = {
+                'max_features': ['sqrt', 'log2', None],
+                'max_depth': tuning.UniformIntegerLogSpace(base=2, lo=0, hi=7),
+                'n_estimators': tuning.UniformIntegerLogSpace(base=2, lo=4, hi=8)
+                }
+        elif method == 'linear_svm':
+            from sklearn.svm import SVC
+            # remark: due to a bug in scikit-learn / libsvm, the sparse 'linear'
+            # kernel is much slower than the sparse 'poly' kernel, so we use
+            # the 'poly' kernel with degree=1 over the 'linear' kernel
+            estimator = SVC(kernel='poly', degree=1, coef0=0., gamma=1.,
+                            probability=True, cache_size=1000)
+            param_dist = {
+                'C': tuning.UniformLogSpace(base=10, lo=-2, hi=1)
+                }
+        elif method == 'poly_svm':
+            from sklearn.svm import SVC
+            estimator = SVC(kernel='poly', probability=True, cache_size=1000)
+            param_dist = {
+                'C': tuning.UniformLogSpace(base=10, lo=-2, hi=1),
+                'degree': [2, 3, 4],
+                'gamma': tuning.UniformLogSpace(base=10, lo=-5, hi=1)
+                }
+        elif method == 'rbf_svm':
+            from sklearn.svm import SVC
+            estimator = SVC(kernel='rbf', probability=True, cache_size=1000)
+            param_dist = {
+                'C': tuning.UniformLogSpace(base=10, lo=-2, hi=1),
+                'gamma': tuning.UniformLogSpace(base=10, lo=-5, hi=1)
+                }
+        elif method == 'gbdt':
+            from xgboost import XGBClassifier
+            estimator = XGBClassifier(objective='multi:softprob')
+            param_dist = {
+                'max_depth': tuning.UniformIntegerLogSpace(base=2, lo=0, hi=5),
+                'n_estimators': tuning.UniformIntegerLogSpace(base=2, lo=4, hi=8),
+                'learning_rate': tuning.UniformLogSpace(base=10, lo=-3, hi=0)
+                }
+        else:
+            raise ValueError('unknown method: {}'.format(method))
 
-    nb_features = len(idx_feat_dict)
-    nb_classes = len(idx_class_dict)
-    nb_cases = len(X)
-
-    print('Data loaded in {:.5f} s'.format(time.time() - start))
-    print()
-
-    # shuffle indices
-    perm_indices = np.random.permutation(nb_cases)    
-    try: # try validating shuffled indices
-        with open(data_path + '_perm_indices.pkl', 'r') as f:
-            exp_perm_indices = pickle.load(f)
-            assert np.all(perm_indices == exp_perm_indices)
-    except:
-        eprint('file not found ' + data_path + '_perm_indices.pkl')
-        eprint('not doing perm_indices check')
-
-    return X, y, perm_indices, nb_features, nb_classes
-
-''' 
-* Vectorizes data for input to the scikit-learn API.
-* Expects:
-    - X = feature data
-    - y = class_data
-    - nb_features = number of features
-* Returns:
-    - preprocessed data in standard X, y form (X, y)
-'''
-def preproc_for_sklearn(X, y, nb_features):
-    try:
-        tokenizer = Tokenizer(num_words=nb_features)
-    except:
-        tokenizer = Tokenizer(num_words=nb_features)
-    X = tokenizer.sequences_to_matrix(X, mode='binary')
-
-    return X, y
-
-''' 
-* Performs Chi2 feature selection, and gets indices of best features. 
-* Expects:
-    - X = feature data
-    - y = class_data
-    - nb_features = number of features
-    - nb_features_to_keep = number of features to keep
-* Returns:
-    - list of selected feature indices (selected_indices)
-'''
-def select_feats(X, y, nb_features, nb_features_to_keep=2048):
-    X, y = preproc_for_sklearn(X, y, nb_features)
-
-    if nb_features < nb_features_to_keep:
-        nb_features_to_keep = nb_features_to_keep / 4
-
-    feature_selector = SelectKBest(chi2, k=nb_features_to_keep).fit(X, y)
-    selected_indices = feature_selector.get_support(indices=True) 
-    
-    return selected_indices
-
-''' 
-* Performs parameter search to get best parameters. 
-* Expects:
-    - X = feature data
-    - y = class_data
-    - estimator = scikit-learn classifier
-    - search = parameter search function
-    - dist_or_grid = search space, either a distribution or grid
-    - **search_kwargs = additional arugments for parameter search function
-* Returns:
-    - dictionary of best parameters
-'''
-def parameter_search(X, y, estimator, search, dist_or_grid, **search_kwargs):
-    param_search = search(estimator, dist_or_grid, refit=False, **search_kwargs)
-    param_search.fit(X, y)
-    return param_search.best_params_
+        param_search = RandomizedSearchCV(
+            estimator, param_dist, refit=False, n_iter=num_search,
+            scoring=loss_scorer)
+        param_search.fit(x_val, y_val)
 
 
-''' 
-* Checks of parameter search has been done already. 
-* Expects:
-    - names = list of method names
-    - data_fn = string data filename
-    - prop_missing = float proportion of data simulated to be missing
-* Returns:
-    - boolean, true parameter search has already been done
-'''
-def already_done(names, data_fn, prop_missing):
-    for name in names:
-        to_check = '{}/{}_{}_{}_param.pkl'.format(CACHE_DIR, name, 
-            data_fn, prop_missing)
-        if not os.path.isfile(to_check): return False
-    return True
+        best_param = param_search.best_params_
 
-# ---------------------------- PUBLIC FUNCTIONS ------------------------------ #
+    print('Best parameters for {} for k_idx={}: {} found in {:.3f} s'
+          .format(method, k_idx, best_param, time.time() - start))
 
-''' 
-* Run parameter search for various machine learning pipelines. 
-* Expects:
-    - data_path = data filepath
-    - method = method
-    - prop_missing = float proportion of data simulated to be missing 
-    - k = number of partitions for k-fold cross-validation
-    - skip_nonlinear_svm = boolean whether to skip nonlinear SVM methods, 
-      only relevant if 'svm' is selected as the method
-    - nb_searches = number of searches
-    - max_nb_samples = maximum number of samples to be used
-'''
-def run(data_fn, method='lrfc', prop_missing=0.0, k=10, 
-    skip_nonlinear_svm=False, nb_searches=20, max_nb_samples=10000):
-    if 'dummy' in data_fn or 'debug' in data_fn: nb_searches = 3
-    data_path = '{}/{}'.format(DATA_DIR, data_fn)
+    return best_param
 
-    if not FORCE_RUN: # check if already did param search, if so, skip 
-        did = lambda x: already_done(x, data_fn, prop_missing) # helper
-        if method == 'riddle' and did(['riddle']):
-            eprint('Already did parameter search for riddle')
-            return
-        elif method == 'lrfc' and did(['logit', 'rfc']):
-            eprint('Already did parameter search for lrfc')
-            return
-        elif method == 'svm' and did(['linear-svm', 'poly-svm', 'rbf-svm']):
-            eprint('Already did parameter search for svm')
-            return 
 
-    params = {'riddle': {}, 'logit': {}, 'rfc': {}, 'linear-svm': {},
-        'poly-svm': {}, 'rbf-svm': {}}
-    X, y, perm_indices, nb_features, nb_classes = get_base_data(data_path, 
-        prop_missing)
+def run_kfold(data_fn, method='logit', prop_missing=0., max_num_feature=-1,
+              feature_selection='random', k=10, max_num_sample=10000,
+              num_search=30, data_dir='_data', cache_dir='_cache',
+              force_run=False):
+    """Run several parameter searches a la k-fold cross-validation.
 
+    Arguments:
+        data_fn: string
+            data file filename
+        method: string
+            name of classification method; values = {'logit', 'random_forest',
+            'linear_svm', 'poly_svm', 'rbf_svm', 'gbdt', 'riddle'}
+        prop_missing: float
+            proportion of feature observations which should be randomly masked;
+            values in [0, 1)
+        max_num_feature: int
+            maximum number of features to use
+        feature_selection: string
+            feature selection method; values = {'random', 'frequency', 'chi2'}
+        k: int
+            number of partitions for k-fold cross-validation
+        max_num_sample: int
+            maximum number of samples to use
+        num_search: int
+            number of searches (parameter configurations) to try for each
+            partition
+        data_dir: string
+            directory where data files are located
+        cache_dir: string
+            directory where cached files (e.g., saved parameters) are located
+        out_dir: string
+            directory where outputs (e.g., results) should be saved
+    """
+    if 'debug' in data_fn:
+        num_search = 3
+
+    # check if already did param search, if so, skip
+    param_path = get_param_path(cache_dir, method, data_fn, prop_missing,
+                                max_num_feature, feature_selection)
+    if not force_run and os.path.isfile(param_path):
+        warnings.warn('Already did search for {}, not performing search'
+                      .format(method))
+        return
+
+    x_unvec, y, idx_feat_dict, idx_class_dict, _, perm_indices = (
+        get_preprocessed_data(data_dir, data_fn, prop_missing=prop_missing))
+    num_feature = len(idx_feat_dict)
+    num_class = len(idx_class_dict)
+    params = {}
     for k_idx in range(0, k):
-        print('-' * 72)
-        print('Partition k = {}'.format(k_idx))
-        
-        data_partition_dict = emr.get_k_fold_partition(X, y, k_idx=k_idx, k=k, 
-            perm_indices=perm_indices)
+        params[k_idx] = run(
+            method, x_unvec, y, idx_feat_dict, num_feature=num_feature,
+            max_num_feature=max_num_feature, num_class=num_class,
+            max_num_sample=max_num_sample, feature_selection=feature_selection,
+            k_idx=k_idx, k=k, num_search=num_search, perm_indices=perm_indices)
 
-        X_train = data_partition_dict['X_train']
-        y_train = data_partition_dict['y_train']
-
-        X_val = data_partition_dict['X_val']
-        y_val = data_partition_dict['y_val']
-
-        # cap number of validation samples
-        if max_nb_samples != None and len(X_val)> max_nb_samples:
-            X_val = X_val[0:max_nb_samples]
-            y_val = y_val[0:max_nb_samples]
-        
-        if method != 'riddle':
-            selected_feat_indices = select_feats(X_train + X_val, y_train + y_val,
-                nb_features=nb_features)
-            X_val, y_val = preproc_for_sklearn(X_val, y_val, 
-                nb_features=nb_features)
-
-            X_val = X_val[:, selected_feat_indices]
-
-        if method == 'riddle':
-            start = time.time()
-            model_module = models.deep_mlp
-            riddle_param_dist = {'learning_rate': UniformLogSpace(10, lo=-6, hi=-1)}
-            params['riddle'][k_idx] = parameter_tuning.random_search(model_module, 
-                riddle_param_dist, X_val, y_val, nb_features=nb_features, 
-                nb_classes=nb_classes, k=3, 
-                process_X_data_func_args={'nb_features': nb_features}, 
-                process_y_data_func_args={'nb_classes': nb_classes},
-                nb_searches=nb_searches)
-            print('Best parameters for RIDDLE: {} found in {:.3f} s'
-                .format(params['riddle'][k_idx], time.time() - start))
-
-        elif method == 'lrfc':
-            # logistic regression
-            start = time.time()
-            logit_param_dist = {'C': UniformLogSpace()}
-            logit_estimator = LogisticRegression(multi_class='multinomial', 
-                solver='lbfgs')
-            params['logit'][k_idx] = parameter_search(X_val, y_val, 
-                estimator=logit_estimator, search=RandomizedSearchCV, 
-                dist_or_grid=logit_param_dist, n_iter=nb_searches,
-                scoring=loss_scorer)
-            print('Best parameters for logistic regression: {} found in {:.3f} s'
-                .format(params['logit'][k_idx], time.time() - start))
-
-            # random forest classifier
-            start = time.time()
-            rfc_param_dist = {'max_features': ['sqrt', 'log2'], \
-                'max_depth': UniformLogSpace(base=2, lo=2, hi=9)}
-            rfc_estimator = RandomForestClassifier()
-            params['rfc'][k_idx] = parameter_search(X_val, y_val, 
-                estimator=rfc_estimator, search=RandomizedSearchCV, 
-                dist_or_grid=rfc_param_dist, n_iter=nb_searches,
-                scoring=loss_scorer)
-            print('Best parameters for random forest: {} found in {:.3f} s'
-                .format(params['rfc'][k_idx], time.time() - start))
-
-        elif method == 'svm':
-            # linear SVM
-            start = time.time()
-            linear_svm_param_dist = {'C': UniformLogSpace()}
-            linear_svm_estimator = SVC(kernel='linear', probability=True)
-            params['linear-svm'][k_idx] = parameter_search(X_val, y_val,
-                estimator=linear_svm_estimator, search=RandomizedSearchCV, 
-                dist_or_grid=linear_svm_param_dist, n_iter=nb_searches, 
-                scoring=loss_scorer)
-            print('Best parameters for linear SVM: {} found in {:.3f} s'
-                .format(params['linear-svm'][k_idx], time.time() - start))
-
-            if skip_nonlinear_svm: continue # skip
-
-            nonlinear_svm_param_dist = {'C': UniformLogSpace(), 
-                'gamma': UniformLogSpace(base=10, lo=-5, hi=1)}
-
-            # polynomial SVM
-            start = time.time()
-            poly_svm_estimator = SVC(kernel='poly', probability=True)
-            params['poly-svm'][k_idx] = parameter_search(X_val, y_val,
-                estimator=poly_svm_estimator, search=RandomizedSearchCV, 
-                dist_or_grid=nonlinear_svm_param_dist, n_iter=nb_searches, 
-                scoring=loss_scorer)
-            print('Best parameters for polynomial SVM: {} found in {:.3f} s'
-                .format(params['poly-svm'][k_idx], time.time() - start))
-
-            # RBF SVM
-            start = time.time()
-            rbf_svm_estimator = SVC(kernel='rbf', probability=True)
-            params['rbf-svm'][k_idx] = parameter_search(X_val, y_val,
-                estimator=rbf_svm_estimator, search=RandomizedSearchCV, 
-                dist_or_grid=nonlinear_svm_param_dist, n_iter=nb_searches, 
-                scoring=loss_scorer)
-            print('Best parameters for RBF SVM: {} found in {:.3f} s'
-                .format(params['rbf-svm'][k_idx], time.time() - start))
-
-        else: raise ValueError('unknown method: {}'.format(method))
-
-    # save
-    for method_name, sub_param_dict in params.items():
-        if len(sub_param_dict) > 0:
-            pickle_object(sub_param_dict, '{}/{}_{}_{}_param.pkl'.format(
-                CACHE_DIR, method_name, data_fn, prop_missing))
+    recursive_mkdir(FLAGS.cache_dir)
+    with open(param_path, 'w') as f:  # save
+        pickle.dump(params, f)
 
     print('Finished parameter search for method: {}'.format(method))
 
-'''
-* * Runs parameter searches for various machine learning pipelines.
-> Command line arguments:
-    + method = method
-    + data_fn = string data file name
-    + prop_missing = float proportion of data to randomly simulate as missing
-'''
-def main(args):
-    try: method = args[1].lower()
-    except:
-        method = 'lrfc'
-        eprint('Using default method = \'{}\''.format(method))
 
-    try: data_fn = args[2]
-    except: 
-        data_fn = 'dummy.txt'
-        eprint('Using default data_fn = \'{}\''.format(data_fn))
+def main():
+    """Main method."""
+    np.random.seed(SEED)  # for reproducibility, must be before Keras imports!
+    run_kfold(data_fn=FLAGS.data_fn,
+              method=FLAGS.method,
+              prop_missing=FLAGS.prop_missing,
+              max_num_feature=FLAGS.max_num_feature,
+              feature_selection=FLAGS.feature_selection,
+              max_num_sample=FLAGS.max_num_sample,
+              num_search=FLAGS.num_search,
+              data_dir=FLAGS.data_dir,
+              cache_dir=FLAGS.cache_dir,
+              force_run=FLAGS.force_run)
 
-    try: prop_missing = float(args[3])
-    except: 
-        prop_missing = 0.0
-        eprint('Using default prop_missing = {}'.format(prop_missing))
-
-    # not going to finish in time, so skip nonlinear svm if using full dataset
-    skip_nonlinear_svm = 'final-100.txt' in data_fn
-
-    run(data_fn, method=method, prop_missing=prop_missing, 
-        skip_nonlinear_svm=skip_nonlinear_svm)
 
 # if run as script, execute main
 if __name__ == '__main__':
-    import sys
-
-    main(sys.argv)
+    FLAGS, _ = parser.parse_known_args()
+    main()

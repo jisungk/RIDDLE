@@ -1,7 +1,8 @@
-"""other_clf.py
+"""riddle.py
 
-Run various machine learning classification pipelines with k-fold
-cross-validation.
+Run various deep learning classification pipelines with k-fold
+cross-validation. Summarize discriminatory features using DeepLIFT contribution
+scores and paired t-tests with Bonferroni adjustment for multiple comparisons.
 
 Requires:   Keras, NumPy, scikit-learn, RIDDLE (and their dependencies)
 
@@ -18,8 +19,6 @@ import warnings
 
 import numpy as np
 
-from riddle import emr
-
 from utils import evaluate
 from utils import get_base_out_dir
 from utils import get_param_path
@@ -27,17 +26,14 @@ from utils import get_preprocessed_data
 from utils import recursive_mkdir
 from utils import select_features
 from utils import subset_reencode_features
-from utils import vectorize_features
+
 
 SEED = 109971161161043253 % 8085
 
 parser = argparse.ArgumentParser(
-    description='Perform parameter search for various classification methods.')
+    description='Run RIDDLE (deep classification pipeline).')
 parser.add_argument(
-    '--method', type=str, default='logit',
-    help='Classification method to use.')
-parser.add_argument(
-    '--data_fn', type=str, default='debug.txt',
+    '--data_fn', type=str, default='dummy.txt',
     help='Filename of text data file.')
 parser.add_argument(
     '--prop_missing', type=float, default=0.0,
@@ -57,20 +53,18 @@ parser.add_argument(
     help='Directory of data files.')
 parser.add_argument(
     '--cache_dir', type=str, default='_cache',
-    help='Directory where to cache files and outputs.')
+    help='Directory where to cache files.')
 parser.add_argument(
     '--out_dir', type=str, default='_out',
     help='Directory where to save output files.')
 
 
-def run(ModelClass, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
-        num_class, feature_selection, k_idx, k, params, perm_indices,
-        init_args, full_out_dir):
-    """Run a classification pipeline for a single k-fold partition.
+def run(x_unvec, y, idx_feat_dict, idx_class_dict, icd9_descript_dict,
+        num_feature, max_num_feature, num_class, feature_selection, k_idx, k,
+        params, perm_indices, full_out_dir):
+    """Run a RIDDLE classification pipeline for a single k-fold partition.
 
     Arguments:
-        ModelClass: Python class
-            classification model
         x_unvec: [[int]]
             feature indices that have not been vectorized; each inner list
             collects the indices of features that are present (binary on)
@@ -79,12 +73,16 @@ def run(ModelClass, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
             list of class labels as integer indices
         idx_feat_dict: {int: string}
             dictionary mapping feature indices to features
+        idx_class_dict: {int: string}
+            dictionary mapping class indices to classes
+        icd9_descript_dict: {string: string}
+            dictionary mapping ICD9 codes to description text
         num_feature: int
             number of features present in the dataset
         max_num_feature: int
             maximum number of features to use
         num_class: int
-            number of classes present
+            number of classes
         feature_selection: string
             feature selection method; values = {'random', 'frequency', 'chi2'}
         k_idx: int
@@ -97,55 +95,70 @@ def run(ModelClass, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
         perm_indices: np.ndarray, int
             array of indices representing a permutation of the samples with
             shape (num_sample, )
-        init_args: {string: ?}
-            dictionary mapping initialization argument names to values
-        out_dir: string
+        full_out_dir: string
             directory where outputs (e.g., results) should be saved
     """
-    print('-' * 72)
-    print('Partition k = {}'.format(k_idx))
-    print(params[k_idx])
+    from keras import backend as K
+    from riddle import emr, feature_importance
+    from riddle.models import MLP
 
-    x_train_unvec, y_train, _, _, x_test_unvec, y_test = (
+    print('Partition k = {}'.format(k_idx))
+    print()
+    x_train_unvec, y_train, x_val_unvec, y_val, x_test_unvec, y_test = (
         emr.get_k_fold_partition(x_unvec, y, k_idx=k_idx, k=k,
                                  perm_indices=perm_indices))
 
     if max_num_feature > 0:  # select features and re-encode
-        feat_encoding_dict, _ = select_features(
+        feat_encoding_dict, idx_feat_dict = select_features(
             x_train_unvec, y_train, idx_feat_dict,
             method=feature_selection, num_feature=num_feature,
             max_num_feature=max_num_feature)
-        x_train_unvec = subset_reencode_features(x_train_unvec, feat_encoding_dict)
-        x_test_unvec = subset_reencode_features(x_test_unvec, feat_encoding_dict)
+        x_train_unvec = subset_reencode_features(x_train_unvec,
+                                                 feat_encoding_dict)
+        x_val_unvec = subset_reencode_features(x_val_unvec,
+                                               feat_encoding_dict)
+        x_test_unvec = subset_reencode_features(x_test_unvec,
+                                                feat_encoding_dict)
         num_feature = max_num_feature
 
-    x_train = vectorize_features(x_train_unvec, num_feature)
-    x_test = vectorize_features(x_test_unvec, num_feature)
+    # set up
+    max_num_epoch = -1
+    if 'debug' in full_out_dir:
+        max_num_epoch = 3
+    model = MLP(num_feature=num_feature, num_class=num_class,
+                max_num_epoch=max_num_epoch, **params[k_idx])
 
-    args = dict(init_args) # copy dictionary
-    args.update(params[k_idx])
-
+    # train and test
     start = time.time()
-    model = ModelClass(**args)
-    model.fit(x_train, y_train)
-    y_test_probas = model.predict_proba(x_test)
-    runtime = time.time() - start
 
+    model.train(x_train_unvec, y_train, x_val_unvec, y_val)
+    y_test_probas = model.predict_proba(x_test_unvec)
+
+    runtime = time.time() - start
+    print('Completed training and testing in {:.4f} seconds'.format(runtime))
+    print('-' * 72)
+    print()
+
+    # evaluate model performance
     evaluate(y_test, y_test_probas, runtime, num_class=num_class,
              out_dir=full_out_dir)
 
+    model.save_model(path=full_out_dir + '/model.h5')
+    K.clear_session()
 
-def run_kfold(data_fn, method='logit', prop_missing=0., max_num_feature=-1,
+    print('Finished with partition k = {}'.format(k_idx))
+    print('=' * 72)
+    print()
+
+
+def run_kfold(data_fn, prop_missing=0., max_num_feature=-1,
               feature_selection='random', k=10, which_half='both',
               data_dir='_data', cache_dir='_cache', out_dir='_out'):
-    """Run several classification pipelines a la k-fold cross-validation.
+    """Run several RIDDLE classification pipelines a la k-fold cross-validation.
 
     Arguments:
         data_fn: string
             data file filename
-        method: string
-            name of classification method; values = {'logit', 'random_forest',
-            'linear_svm', 'poly_svm', 'rbf_svm', 'gbdt'}
         prop_missing: float
             proportion of feature observations which should be randomly masked;
             values in [0, 1)
@@ -162,61 +175,48 @@ def run_kfold(data_fn, method='logit', prop_missing=0., max_num_feature=-1,
         cache_dir: string
             directory where cached files (e.g., saved parameters) are located
         out_dir: string
-            directory where
-        perm_indices: np.ndarray, int
-            array of indices representing a permutation of the samples with
-            shape (num_sample, )
-        init_args: {string: ?}
-            dictionary mapping initialization argument names to values
-        out_dir: string
-            directory where outputs (e.g., results) should be saved
+            outer directory where outputs (e.g., results) should be saved
     """
     start = time.time()
 
-    try: # load saved parameters
-        param_path = get_param_path(cache_dir, method, data_fn, prop_missing,
+    base_out_dir = get_base_out_dir(out_dir, 'riddle', data_fn, prop_missing,
                                     max_num_feature, feature_selection)
-        with open(param_path, 'r') as f:
-            params = pickle.load(f)
-    except:
-        warnings.warn('Cannot load parameters from: {}\n'.format(param_path) +
-                      'Need to do parameter search; run parameter_search.py')
-        raise
+    recursive_mkdir(cache_dir)
 
-    # TODO(jisungkim) handle binary and multiclass separately, don't assume multiclass!
-    if method == 'logit':
-        from sklearn.linear_model import LogisticRegression as ModelClass
-        init_args = {'multi_class': 'multinomial', 'solver':'lbfgs'}
-    elif method == 'random_forest':
-        from sklearn.ensemble import RandomForestClassifier as ModelClass
-        init_args = {}
-    elif method == 'linear_svm':
-        from sklearn.svm import SVC as ModelClass
-        # remark: due to a bug in scikit-learn / libsvm, the sparse 'linear'
-        # kernel is much slower than the sparse 'poly' kernel, so we use
-        # the 'poly' kernel with degree=1 over the 'linear' kernel
-        init_args = {'kernel': 'poly', 'degree': 1, 'coef0': 0.,
-                     'gamma': 1., 'probability': True, 'cache_size': 1000}
-    elif method == 'poly_svm':
-        from sklearn.svm import SVC as ModelClass
-        init_args = {'kernel': 'poly', 'probability': True, 'cache_size': 1000}
-    elif method == 'rbf_svm':
-        from sklearn.svm import SVC as ModelClass
-        init_args = {'kernel': 'rbf', 'probability': True, 'cache_size': 1000}
-    elif method == 'gbdt':
-        from xgboost import XGBClassifier as ModelClass
-        init_args = {'objective': 'multi:softprob'}
-    else:
-        raise ValueError('unknown method: {}'.format(method))
-
-    x_unvec, y, idx_feat_dict, idx_class_dict, _, perm_indices = (
+    # get common data
+    x_unvec, y, idx_feat_dict, idx_class_dict, icd9_descript_dict, perm_indices = (
         get_preprocessed_data(data_dir, data_fn, prop_missing=prop_missing))
     num_feature = len(idx_feat_dict)
     num_class = len(idx_class_dict)
 
-    base_out_dir = get_base_out_dir(out_dir, method, data_fn, prop_missing,
+    # print/save value-sorted dictionary of classes and features
+    class_mapping = sorted(idx_class_dict.items(), key=lambda key: key[0])
+    with open(base_out_dir + '/class_mapping.txt', 'w') as f:
+        print(class_mapping, file=f)
+    with open(base_out_dir + '/feature_mapping.txt', 'w') as f:
+        for idx, feat in idx_feat_dict.items():
+            f.write('{}\t{}\n'.format(idx, feat))
+
+    try: # load saved parameters
+        param_path = get_param_path(cache_dir, 'riddle', data_fn, prop_missing,
                                     max_num_feature, feature_selection)
-    recursive_mkdir(base_out_dir)
+        with open(param_path, 'r') as f:
+            params = pickle.load(f)
+
+        # for legacy compatability
+        new_params = {}
+        for k_idx, param in params.items():
+            if 'nb_hidden_layers' in param:
+                param['num_hidden_layer'] = param.pop('nb_hidden_layers')
+            if 'nb_hidden_nodes' in param:
+                param['num_hidden_node'] = param.pop('nb_hidden_nodes')
+            new_params[k_idx] = param
+        params = params
+
+    except:
+        warnings.warn('Cannot load parameters from: {}\n'.format(param_path) +
+                      'Need to do parameter search; run parameter_search.py')
+        raise
 
     if which_half == 'both':
         loop = range(0, k)
@@ -231,21 +231,20 @@ def run_kfold(data_fn, method='logit', prop_missing=0., max_num_feature=-1,
         sub_out_dir = '{}/k_idx={}'.format(base_out_dir, k_idx)
         recursive_mkdir(sub_out_dir)
 
-        run(ModelClass, x_unvec, y, idx_feat_dict, num_feature=num_feature,
-            max_num_feature=max_num_feature, num_class=num_class,
-            feature_selection=feature_selection, k_idx=k_idx, k=k,
-            params=params, perm_indices=perm_indices, init_args=init_args,
+        run(x_unvec, y, idx_feat_dict, idx_class_dict, icd9_descript_dict,
+            num_feature=num_feature, max_num_feature=max_num_feature,
+            num_class=num_class, feature_selection=feature_selection,
+            k_idx=k_idx, k=k, params=params, perm_indices=perm_indices,
             full_out_dir=sub_out_dir)
 
-    print('This k-fold {} multipipeline run script took {:.4f} seconds'
-          .format(method, time.time() - start))
+    print('This k-fold riddle multipipeline run script took {:.4f} seconds'
+          .format(time.time() - start))
 
 
 def main():
     """Main method."""
     np.random.seed(SEED)  # for reproducibility, must be before Keras imports!
     run_kfold(data_fn=FLAGS.data_fn,
-              method=FLAGS.method,
               prop_missing=FLAGS.prop_missing,
               max_num_feature=FLAGS.max_num_feature,
               feature_selection=FLAGS.feature_selection,

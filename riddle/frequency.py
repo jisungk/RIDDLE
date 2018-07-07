@@ -1,44 +1,54 @@
-"""
-frequency.py
+"""frequency.py
 
-Counts occurences of features for each class. 
+Counts occurences of features for each class.
 
 Requires:   NumPy (and its dependencies)
 
 Author:     Ji-Sung Kim, Rzhetsky Lab
-Copyright:  2016, all rights reserved
+Copyright:  2018, all rights reserved
 """
 
 import numpy as np
 
-'''
-* Creates a frequency table counting the number of occurences of each feature 
-  (corresponding to column) for each class (corresponding to row). The table 
-  is represented as as numpy array with dimensions (nb_classes, nb_features).
-* Expects:
-    - X = feature data as a list of list of features
-        e.g., [['30', 'M'. '311:30', 'V72.3:4'], ['55', 'F' '311:18']]
-    - y = list of true classes
-        e.g., ['H', 'O']
-    - idx_feat_dict = dictionary mapping feature indices to feature names
-    - idx_class_dict = dictionary mapping class indices to class names
-* Returns:
-    - frequency table, as described above
-'''
-def get_frequency_table(X, y, idx_feat_dict, idx_class_dict):
-    nb_features = len(idx_feat_dict)
-    nb_classes = len(idx_class_dict)
+
+def get_frequency_table(x_unvec, y, idx_feat_dict, idx_class_dict):
+    """Creates a frequency table counting occurences of features across classes.
+
+    The first dimension (0) corresponds to classes and the second dimension (1)
+    corresponds to features.
+
+    Arguments:
+        x_unvec: [[int]]
+            feature indices that have not been vectorized; each inner list
+            collects the indices of features that are present (binary on)
+            for a sample
+        y: [int]
+            list of class labels as integer indices
+        idx_feat_dict: {int: string}
+            dictionary mapping feature indices to features
+        idx_class_dict: {int: string}
+            dictionary mapping class indices to classes
+
+    Returns:
+        class_feat_freq_table: np.ndarray, int
+            2-D array of frequencies with shape (num_class, num_feature); the
+            outer (0) dim represents the class and the inner dim (1) represents
+            the frequency value across features
+    """
+    num_feature = len(idx_feat_dict)
+    num_class = len(idx_class_dict)
 
     # initialize table with zeros
-    class_feat_freq_table = np.zeros((nb_classes, nb_features))
+    class_feat_freq_table = np.zeros((num_class, num_feature))
 
-    for features, class_idx in zip(X, y):
+    for features, class_idx in zip(x_unvec, y):
         for feat_idx in features:
             class_feat_freq_table[class_idx][feat_idx] += 1
 
     # check ordering of features (should be most popular = lowest index)
-    rowsums = np.sum(class_feat_freq_table, axis=0)
-    for idx in range(nb_features - 1):
-        assert rowsums[idx] >= rowsums[idx + 1]
-    
+    # not true if used on holdout data, only true if used on all data
+    # rowsums = np.sum(class_feat_freq_table, axis=0)
+    # for idx in range(num_feature - 1):
+    #     assert rowsums[idx] >= rowsums[idx + 1]
+
     return class_feat_freq_table

@@ -4,6 +4,8 @@ _secret/
 *out*/
 *.png
 venv/
+*TODO*
+*.pkl
 
 # Batch scripts / output
 *.sbatch
