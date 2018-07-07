@@ -19,7 +19,7 @@
     <meta name="author" content="Ji-Sung Kim,Andrey Rzhetsky">
     <link rel="canonical" href="https://riddle.ai">
 
-    <!-- Facebook Graph tags -->
+    <!-- Facebook Graph tags --> 
     <meta property="og:url" content="https://riddle.ai" />
     <meta property="og:site_name" content="riddle.ai" />
     <meta property="og:title" content="RIDDLE | API Docs" />
@@ -157,14 +157,14 @@
 <pre class="highlight python"><code><span class="kn">import</span> <span class="nn">riddle</span>
 </code></pre><pre class="highlight python"><code><span class="n">riddle</span><span class="o">.</span><span class="n">hello</span><span class="p">()</span>
 </code></pre><pre class="highlight plaintext"><code>  &gt; Hello, World
-</code></pre><pre class="highlight plaintext"><code>  &gt; My name is RIDDLE 1.0.0
+</code></pre><pre class="highlight plaintext"><code>  &gt; My name is RIDDLE 2.0.0
 
 </code></pre>
-<p><strong>RIDDLE</strong> (<strong>R</strong>ace and ethnicity <strong>I</strong>mputation from <strong>D</strong>isease history with <strong>D</strong>eep <strong>LE</strong>arning) is an open-source Python2 library for using deep learning to impute race and ethnicity information in anonymized electronic medical records (EMRs). RIDDLE provides the ability to (1) build models for estimating race and ethnicity from clinical features, and (2) interpret trained models to describe how specific features contribute to predictions. The RIDDLE library implements the methods introduced in <a href="https://arxiv.org/abs/1707.01623">&ldquo;RIDDLE: Race and ethnicity Imputation from Disease history with Deep LEarning&rdquo;</a> (arXiv preprint, 2017).</p>
+<p><strong>RIDDLE</strong> (<strong>R</strong>ace and ethnicity <strong>I</strong>mputation from <strong>D</strong>isease history with <strong>D</strong>eep <strong>LE</strong>arning) is an open-source Python2 library for using deep learning to impute race and ethnicity information in anonymized electronic medical records (EMRs). RIDDLE provides the ability to (1) build models for estimating race and ethnicity from clinical features, and (2) interpret trained models to describe how specific features contribute to predictions. The RIDDLE library implements the methods introduced in <a href="https://doi.org/10.1371/journal.pcbi.1006106">&ldquo;RIDDLE: Race and ethnicity Imputation from Disease history with Deep LEarning&rdquo;</a> (PLOS Computational Biology, 2018).</p>
 
-<p>Compared to alternative methods (e.g., scikit-learn/Python, glm/R), RIDDLE is designed to handle large and high-dimensional datasets in a performant fashion. RIDDLE trains models efficiently by using a parallelized TensorFlow/Theano backend, and avoids memory overflow by preprocessing data in conjunction with batch-wise training.</p>
+<p>Compared to alternative methods (e.g., scikit-learn/Python, glm/R), RIDDLE is designed to handle large and high-dimensional datasets in a performant fashion. RIDDLE trains models efficiently by using a parallelized TensorFlow-under-Keras backend, and avoids memory overflow by preprocessing data in conjunction with batch-wise training.</p>
 
-<p>RIDDLE uses <a href="https://keras.io">Keras</a> to specify and train the underlying deep neural networks, and <a href="https://github.com/kundajelab/deeplift">DeepLIFT</a> to compute feature-to-class contribution scores. The current RIDDLE Python module works with both TensorFlow and Theno as the backend to Keras. The default architecture is a deep multi-layer perceptron (deep MLP) that takes binary-encoded features and targets. However, you can specify any neural network architecture (e.g., LSTM, CNN) and data format by writing your own <code class="prettyprint">model_module</code> files (see <a href="#configuration"><em>Configuration</em></a>)! </p>
+<p>RIDDLE uses <a href="https://keras.io">Keras</a> to specify and train the underlying deep neural networks, and <a href="https://github.com/kundajelab/deeplift">DeepLIFT</a> to compute feature-to-class contribution scores. The default architecture is a deep multi-layer perceptron (deep MLP) that takes binary-encoded features and targets. However, you can specify any neural network architecture (e.g., LSTM, CNN) and data format by writing your own <code class="prettyprint">model_module</code> files (see <a href="#configuration"><em>Configuration</em></a>)!</p>
 
 <h1 id="installation">Installation</h1>
 
@@ -208,42 +208,42 @@
 <h3 id="configuration">Configuration</h3>
 
 <ul>
-<li><p><a href="https://keras.io/backend/">Change your Keras backend</a> to your choice of Theano or TensorFlow.</p></li>
-<li><p>Configure <code class="prettyprint">feature_importance.py</code> to point to the correct <code class="prettyprint">deeplift</code> directory.</p></li>
-<li><p>Modify <code class="prettyprint">pipeline.py</code> or <code class="prettyprint">kfold_pipeline.py</code> as needed (e.g., datapath variables).</p></li>
-<li><p>If desired, add your own custom <code class="prettyprint">model_module.py</code> and modify <code class="prettyprint">pipeline.py</code> or <code class="prettyprint">kfold_pipeline.py</code> accordingly. A <code class="prettyprint">model_module</code> file generally has <em>three</em> core functions:</p>
-
-<ul>
-<li><code class="prettyprint">create_base_model()</code> which returns a Sequential Keras model</li>
-<li><code class="prettyprint">process_X_data()</code> which processes (e.g., vectorizes) feature data</li>
-<li><code class="prettyprint">process_y_data()</code> which processes class data</li>
-</ul></li>
+<li>Configure <code class="prettyprint">feature_importance.py</code> to point to the correct <code class="prettyprint">deeplift</code> directory.</li>
+<li>Modify <code class="prettyprint">parameter_search.py</code>, <code class="prettyprint">riddle.py</code>, <code class="prettyprint">feature_importance.py</code> as needed (e.g., datapath FLAGS).</li>
+<li>If desired, write your own Model class which inherits from the <code class="prettyprint">models/model.Model</code> class. Update the above scripts accordingly.</li>
 </ul>
 
 <h1 id="high-level-api">High-level API</h1>
 
 <blockquote>
-<p>Typical workflow for a basic pipeline</p>
+<p>Quickstart commands</p>
 </blockquote>
-<pre class="highlight python"><code><span class="kn">from</span> <span class="nn">riddle</span> <span class="kn">import</span> <span class="n">emr</span><span class="p">,</span> <span class="n">models</span>
+<pre class="highlight shell"><code><span class="c"># run in repository directory</span>
+</code></pre><pre class="highlight shell"><code>python parameter_search.py
+</code></pre><pre class="highlight shell"><code>python riddle.py
+</code></pre><pre class="highlight shell"><code>python interpret_riddle.py
+</code></pre>
+<blockquote>
+<p>Template script for a toy pipeline</p>
+</blockquote>
+<pre class="highlight python"><code><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="n">np</span>
+</code></pre><pre class="highlight python"><code><span class="kn">from</span> <span class="nn">sklearn.metrics</span> <span class="kn">import</span> <span class="n">accuracy_score</span>
+
+</code></pre><pre class="highlight python"><code><span class="kn">from</span> <span class="nn">riddle</span> <span class="kn">import</span> <span class="n">emr</span><span class="p">,</span> <span class="n">models</span>
+
 </code></pre><pre class="highlight python"><code><span class="c"># get data</span>
-</code></pre><pre class="highlight python"><code><span class="c"># perm_indices = shuffled list of indices</span>
-</code></pre><pre class="highlight python"><code><span class="n">data_partition_dict</span> <span class="o">=</span> <span class="n">emr</span><span class="o">.</span><span class="n">get_k_fold_partition</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">k_idx</span><span class="o">=</span><span class="n">k_idx</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">perm_indices</span><span class="o">=</span><span class="n">perm_indices</span><span class="p">)</span>
-</code></pre><pre class="highlight python"><code><span class="n">nb_features</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_feat_dict</span><span class="p">)</span>
-</code></pre><pre class="highlight python"><code><span class="n">nb_classes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx_class_dict</span><span class="p">)</span>
-</code></pre><pre class="highlight python"><code><span class="n">nb_cases</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+</code></pre><pre class="highlight python"><code><span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">emr</span><span class="o">.</span><span class="n">get_data</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</code></pre><pre class="highlight python"><code><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">x_val</span><span class="p">,</span> <span class="n">y_val</span><span class="p">,</span> <span class="n">x_test</span><span class="p">,</span> <span class="n">y_test</span> <span class="o">=</span> <span class="n">emr</span><span class="o">.</span><span class="n">get_k_fold_partition</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="o">...</span><span class="p">)</span>
 
-</code></pre><pre class="highlight python"><code><span class="c"># specify data preprocessing functions &amp; model</span>
-</code></pre><pre class="highlight python"><code><span class="n">process_X_data_func</span> <span class="o">=</span> <span class="n">model_module</span><span class="o">.</span><span class="n">process_X_data</span>
-</code></pre><pre class="highlight python"><code><span class="n">process_X_data_func_args</span> <span class="o">=</span> <span class="p">{</span><span class="s">'nb_features'</span><span class="p">:</span> <span class="n">nb_features</span><span class="p">}</span>
-</code></pre><pre class="highlight python"><code><span class="n">process_y_data_func</span> <span class="o">=</span> <span class="n">model_module</span><span class="o">.</span><span class="n">process_y_data</span>
-</code></pre><pre class="highlight python"><code><span class="n">process_y_data_func_args</span> <span class="o">=</span> <span class="p">{</span><span class="s">'nb_classes'</span><span class="p">:</span> <span class="n">nb_classes</span><span class="p">}</span>
-</code></pre><pre class="highlight python"><code><span class="c"># best_model_param = dict of pre-selected model parameters</span>
-</code></pre><pre class="highlight python"><code><span class="n">model</span> <span class="o">=</span> <span class="n">model_module</span><span class="o">.</span><span class="n">create_base_model</span><span class="p">(</span><span class="n">nb_features</span><span class="o">=</span><span class="n">nb_features</span><span class="p">,</span> <span class="n">nb_classes</span><span class="o">=</span><span class="n">nb_classes</span><span class="p">,</span> <span class="o">**</span><span class="n">best_model_param</span><span class="p">)</span>
+</code></pre><pre class="highlight python"><code><span class="c"># specify model</span>
+</code></pre><pre class="highlight python"><code><span class="n">model</span> <span class="o">=</span> <span class="n">MLP</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 
-</code></pre><pre class="highlight python"><code><span class="c"># train and test model</span>
-</code></pre><pre class="highlight python"><code><span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">X_val</span><span class="p">,</span> <span class="n">y_val</span><span class="p">,</span> <span class="n">process_X_data_func</span><span class="p">,</span> <span class="n">process_y_data_func</span><span class="p">,</span> <span class="n">nb_features</span><span class="o">=</span><span class="n">nb_features</span><span class="p">,</span> <span class="n">nb_classes</span><span class="o">=</span><span class="n">nb_classes</span><span class="p">,</span> <span class="n">process_X_data_func_args</span><span class="o">=</span><span class="n">process_X_data_func_args</span><span class="p">,</span> <span class="n">process_y_data_func_args</span><span class="o">=</span><span class="n">process_y_data_func_args</span><span class="p">,)</span>
-</code></pre><pre class="highlight python"><code><span class="p">(</span><span class="n">loss</span><span class="p">,</span> <span class="n">acc</span><span class="p">),</span> <span class="n">y_test_probas</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">test</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">X_test</span><span class="p">,</span> <span class="n">y_test</span><span class="p">,</span> <span class="n">process_X_data_func</span><span class="p">,</span> <span class="n">process_y_data_func</span><span class="p">,</span> <span class="n">nb_features</span><span class="o">=</span><span class="n">nb_features</span><span class="p">,</span>  <span class="n">nb_classes</span><span class="o">=</span><span class="n">nb_classes</span><span class="p">,</span> <span class="n">process_X_data_func_args</span><span class="o">=</span><span class="n">process_X_data_func_args</span><span class="p">,</span> <span class="n">process_y_data_func_args</span><span class="o">=</span><span class="n">process_y_data_func_args</span><span class="p">)</span>
+</code></pre><pre class="highlight python"><code><span class="c"># train and evaluate model</span>
+</code></pre><pre class="highlight python"><code><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">x_train</span><span class="p">,</span> <span class="n">y_train</span><span class="p">,</span> <span class="n">x_val</span><span class="p">,</span> <span class="n">y_val</span><span class="p">)</span>
+
+</code></pre><pre class="highlight python"><code><span class="n">y_probas</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict_proba</span><span class="p">(</span><span class="n">x_test</span><span class="p">)</span>
+</code></pre><pre class="highlight python"><code><span class="n">y_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">y_probas</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre><pre class="highlight python"><code><span class="k">print</span><span class="p">(</span><span class="s">'accuracy: {:.4f}'</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">accuracy_score</span><span class="p">(</span><span class="n">y_test</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">)))</span>
 
 </code></pre>
 <h3 id="modules">Modules</h3>
@@ -308,22 +308,26 @@ Remember — you can use your own custom architecture files (e.g., CNNs, LSTMs) 
 Princeton University<br>
 <em>hello (at) jisungkim.com</em></p>
 
+<p><a href="https://scholar.google.com/citations?user=wqdK8ugAAAAJ&amp;hl=en">Xin Gao</a>, Associate Professor<br>
+King Abdullah University of Science and Technology<br>
+<em>xin.gao (at) kaust.edu.sa</em></p>
+
 <p><a href="https://scholar.google.com/citations?user=HXCMYLsAAAAJ&amp;hl=en">Andrey Rzhetsky</a>, Edna K. Papazian Professor<br>
 University of Chicago<br>
 <em>andrey.rzhetsky (at) uchicago.edu</em></p>
 
 <h1 id="license-amp-attribution">License &amp; Attribution</h1>
 
-<p>All media (including but not limited to designs, images and logos) are copyrighted by Ji-Sung Kim (2017). </p>
+<p>All media (including but not limited to designs, images and logos) are copyrighted by Ji-Sung Kim (2018).</p>
 
-<p>Project code (explicitly excluding media) is licensed under the Apache License 2.0. If you would like use or modify this project or any code presented here, please include the <a href="https://github.com/jisungk/RIDDLE/blob/master/NOTICE">notice</a> and <a href="https://github.com/jisungk/RIDDLE/blob/master/LICENSE">license</a> files, and cite the <a href="https://arxiv.org/abs/1707.01623">manuscript</a>.</p>
+<p>Project code (explicitly excluding media) is licensed under the Apache License 2.0. If you would like use or modify this project or any code presented here, please include the <a href="https://github.com/jisungk/riddle/NOTICE">notice</a> and <a href="https://github.com/jisungk/riddle/LICENSE">license</a> files, and cite the <a href="https://doi.org/10.1371/journal.pcbi.1006106">paper</a>.</p>
 
 
         <!-- GitHub star button. -->
         <div style="position:absolute;top:15px;right:15px;">
-          <a class="github-button" href="https://github.com/jisungk/riddle" data-icon="octicon-star" data-size="large" data-show-count="true" aria-label="Star jisungk/riddle on GitHub">Star</a>
+          <a class="github-button" href="https://github.com/ntkme/github-buttons" data-icon="octicon-star" data-size="large" aria-label="Star ntkme/github-buttons on GitHub">Star</a>
         </div>
-
+        
       </div>
       <div class="dark-box">
       </div>

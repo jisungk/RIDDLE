@@ -9,6 +9,7 @@ venv/
 *.sbatch
 *.err
 *.out
+*TODO*
 
 # Sublime temp files
 *~
