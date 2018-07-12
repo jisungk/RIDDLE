@@ -169,32 +169,27 @@
 <h1 id="installation">Installation</h1>
 
 <blockquote>
-<p>Install dependencies</p>
+<p>Shell commands:</p>
 </blockquote>
-<pre class="highlight shell"><code><span class="c"># from GitHub</span>
-</code></pre><pre class="highlight shell"><code>pip install --upgrade --no-deps git+git://github.com/jisungk/riddle.git
-</code></pre><pre class="highlight shell"><code>pip install --upgrade --no-deps git+git://github.com/kundajelab/deeplift.git
-
-</code></pre><pre class="highlight shell"><code><span class="c"># TensorFlow (Python2)</span>
-</code></pre><pre class="highlight shell"><code>pip install --upgrade tensorflow
-
-</code></pre><pre class="highlight shell"><code><span class="c"># from pip</span>
-</code></pre><pre class="highlight shell"><code>pip install --upgrade keras
-</code></pre><pre class="highlight shell"><code>pip install --upgrade sklearn
-</code></pre><pre class="highlight shell"><code>pip install --upgrade numpy
-</code></pre><pre class="highlight shell"><code>pip install --upgrade scipy
-</code></pre><pre class="highlight shell"><code>pip install --upgrade matplotlib
-</code></pre><pre class="highlight shell"><code>pip install --upgrade h5py
-
-</code></pre><pre class="highlight shell"><code><span class="c"># from apt-get</span>
+<pre class="highlight shell"><code><span class="c"># Install HDF5 (only non-pip dependency)</span>
 </code></pre><pre class="highlight shell"><code>apt-get install libhdf5-serial-dev
 
+</code></pre><pre class="highlight shell"><code><span class="c"># Option 1) Clone from GitHub</span>
+</code></pre><pre class="highlight shell"><code>git clone --recursive git://github.com/jisungk/riddle.git
+</code></pre><pre class="highlight shell"><code><span class="nb">cd </span>riddle
+</code></pre><pre class="highlight shell"><code>pip install -r requirements.txt
+</code></pre><pre class="highlight shell"><code>apt-get install libhdf5-serial-dev
+
+</code></pre><pre class="highlight shell"><code><span class="c"># Option 2) Install using pip</span>
+</code></pre><pre class="highlight shell"><code>pip install git+https://github.com/jisungk/riddle
+</code></pre><pre class="highlight shell"><code>pip install git+https://github.com/kundajelab/deeplift
+</code></pre><pre class="highlight shell"><code>
 </code></pre>
 <h3 id="install-the-following-libraries-software">Install the following libraries/software:</h3>
 
 <ul>
-<li><strong>RIDDLE</strong> (<code class="prettyprint">riddle</code>, install from <a href="https://github.com/jisungk/riddle">GitHub</a>)</li>
-<li>DeepLIFT (<code class="prettyprint">deeplift</code>, install from <a href="https://github.com/kundajelab/deeplift">GitHub</a>)</li>
+<li><strong>RIDDLE</strong> (<code class="prettyprint">riddle</code>, clone from GitHub)</li>
+<li>DeepLIFT (<code class="prettyprint">deeplift</code>, submodule in RIDDLE repository)</li>
 <li>Keras (<code class="prettyprint">keras</code>)</li>
 <li>TensorFlow (<code class="prettyprint">tensorflow</code>)</li>
 <li>scikit-learn (<code class="prettyprint">sklearn</code>)</li>
@@ -210,7 +205,7 @@
 <ul>
 <li>Configure <code class="prettyprint">feature_importance.py</code> to point to the correct <code class="prettyprint">deeplift</code> directory.</li>
 <li>Modify <code class="prettyprint">parameter_search.py</code>, <code class="prettyprint">riddle.py</code>, <code class="prettyprint">feature_importance.py</code> as needed (e.g., datapath FLAGS).</li>
-<li>If desired, write your own Model class which inherits from the <code class="prettyprint">models/model.Model</code> class. Update the above scripts accordingly.</li>
+<li>If desired, write your own architecture class which inherits from the <code class="prettyprint">models/model.Model</code> class. Update the above scripts accordingly.</li>
 </ul>
 
 <h1 id="high-level-api">High-level API</h1>
@@ -255,33 +250,33 @@
 </tr>
 </thead><tbody>
 <tr>
-<td><code class="prettyprint">emr.py</code></td>
+<td><code class="prettyprint">riddle/emr.py</code></td>
 <td>Reads in data files &amp; preprocesses the data.</td>
 </tr>
 <tr>
-<td><code class="prettyprint">feature_importance.py</code></td>
+<td><code class="prettyprint">riddle/feature_importance.py</code></td>
 <td>Computes &amp; summarizes DeepLIFT feature contribution scores</td>
 </tr>
 <tr>
-<td><code class="prettyprint">roc.py</code></td>
-<td>Computes and graphs ROC-AUC</td>
+<td><code class="prettyprint">riddle/roc.py</code></td>
+<td>Plots ROC curves and computes ROC AUC scores</td>
 </tr>
 <tr>
-<td><code class="prettyprint">utils.py</code></td>
-<td>Useful utilities</td>
+<td><code class="prettyprint">riddle/tuning.py</code></td>
+<td>Implements parameter tuning functions</td>
 </tr>
 <tr>
-<td><code class="prettyprint">models/deep_mlp.py</code></td>
-<td>deep MLP architecture (in <code class="prettyprint">model_module</code> format)</td>
+<td><code class="prettyprint">riddle/models/model.py</code></td>
+<td>Base Model class for defining model architectures</td>
 </tr>
 <tr>
-<td><code class="prettyprint">models/model_utils.py</code></td>
-<td>Useful functions for DL models</td>
+<td><code class="prettyprint">riddle/models/mlp.py</code></td>
+<td>MLP architecture (used in the PLOS CB paper)</td>
 </tr>
 </tbody></table>
 
 <aside class="success">
-Remember — you can use your own custom architecture files (e.g., CNNs, LSTMs) as long as they follow the <span style="font-family:monospace;">model_module</span> format (see <a href="#configuration"><em>Configuration</em></a>)
+Remember — you can use your own custom architecture files (e.g., CNNs, LSTMs) as long as they inherit the base <span style="font-family:monospace;">Model</span> class (see <a href="#configuration"><em>Configuration</em></a>).
 </aside>
 
 <h3 id="scripts">Scripts</h3>
@@ -293,12 +288,16 @@ Remember — you can use your own custom architecture files (e.g., CNNs, LSTMs) 
 </tr>
 </thead><tbody>
 <tr>
-<td><code class="prettyprint">pipeline.py</code></td>
-<td>Runs a single experimental pipeline</td>
+<td><code class="prettyprint">parameter_tuning.py</code></td>
+<td>Runs parameter tuning</td>
 </tr>
 <tr>
-<td><code class="prettyprint">kfold_pipeline.py</code></td>
-<td>Runs multiple experiments using k-fold cross-validation</td>
+<td><code class="prettyprint">riddle.py</code></td>
+<td>Runs experiments (model training and evaluation) using k-fold cross-validation</td>
+</tr>
+<tr>
+<td><code class="prettyprint">interpret_riddle.py</code></td>
+<td>Runs a pipeline to compute DeepLIFT scores</td>
 </tr>
 </tbody></table>
 
@@ -306,26 +305,25 @@ Remember — you can use your own custom architecture files (e.g., CNNs, LSTMs) 
 
 <p><a href="http://jisungkim.com">Ji-Sung Kim</a><br>
 Princeton University<br>
-<em>hello (at) jisungkim.com</em></p>
+<em>hello (at) jisungkim.com</em> (technical inquiries)</p>
 
 <p><a href="https://scholar.google.com/citations?user=wqdK8ugAAAAJ&amp;hl=en">Xin Gao</a>, Associate Professor<br>
-King Abdullah University of Science and Technology<br>
-<em>xin.gao (at) kaust.edu.sa</em></p>
+King Abdullah University of Science and Technology  </p>
 
 <p><a href="https://scholar.google.com/citations?user=HXCMYLsAAAAJ&amp;hl=en">Andrey Rzhetsky</a>, Edna K. Papazian Professor<br>
 University of Chicago<br>
-<em>andrey.rzhetsky (at) uchicago.edu</em></p>
+<em>andrey.rzhetsky (at) uchicago.edu</em> (research inquiries)</p>
 
 <h1 id="license-amp-attribution">License &amp; Attribution</h1>
 
 <p>All media (including but not limited to designs, images and logos) are copyrighted by Ji-Sung Kim (2018).</p>
 
-<p>Project code (explicitly excluding media) is licensed under the Apache License 2.0. If you would like use or modify this project or any code presented here, please include the <a href="https://github.com/jisungk/riddle/NOTICE">notice</a> and <a href="https://github.com/jisungk/riddle/LICENSE">license</a> files, and cite the <a href="https://doi.org/10.1371/journal.pcbi.1006106">paper</a>.</p>
+<p>Project Python code (explicitly excluding media) is licensed under the Apache License 2.0. If you would like use or modify this project or any code presented here, please include the <a href="https://github.com/jisungk/riddle/NOTICE">notice</a> and <a href="https://github.com/jisungk/riddle/LICENSE">license</a> files, and cite the <a href="https://doi.org/10.1371/journal.pcbi.1006106">paper</a>.</p>
 
 
         <!-- GitHub star button. -->
         <div style="position:absolute;top:15px;right:15px;">
-          <a class="github-button" href="https://github.com/ntkme/github-buttons" data-icon="octicon-star" data-size="large" aria-label="Star ntkme/github-buttons on GitHub">Star</a>
+          <a class="github-button" href="https://github.com/jisungk/riddle" data-icon="octicon-star" data-size="large" aria-label="Star ntkme/github-buttons on GitHub">Star</a>
         </div>
         
       </div>
