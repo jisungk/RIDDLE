@@ -10,9 +10,7 @@ Copyright:  2018, all rights reserved
 
 from __future__ import print_function
 
-from itertools import izip
 from math import ceil
-import sys
 import time
 
 from keras.models import load_model as keras_load_model
@@ -82,7 +80,7 @@ class Model(object):
         class EarlyStopping(Exception):
             pass
         try:
-            best_val_loss = sys.float_info.max # some really high initial value
+            best_val_loss = float('inf')
             patience_counter = self._patience
 
             for epoch in range(1, self._max_num_epoch + 1):
@@ -95,12 +93,12 @@ class Model(object):
 
                 # train by batch
                 for i, (x, y) in enumerate(
-                    izip(chunks(x_train_unvec, self._batch_size),
-                         chunks(y_train, self._batch_size))):
+                    zip(chunks(x_train_unvec, self._batch_size),
+                        chunks(y_train, self._batch_size))):
                     if i % 250 == 0 and verbose:
                         print('-- train batch {}'.format(i))
 
-                    assert len(x) == len(y) # chunk sizes should be equal
+                    assert len(x) == len(y)  # chunk sizes should be equal
                     x = self.process_x(x)
                     y = self.process_y(y)
 
@@ -113,18 +111,19 @@ class Model(object):
                 # validation by batch
                 y_val_probas = np.empty([0, self._num_class])
                 for i, (x, y) in enumerate(
-                    izip(chunks(x_val_unvec, self._batch_size),
-                         chunks(y_val, self._batch_size))):
+                    zip(chunks(x_val_unvec, self._batch_size),
+                        chunks(y_val, self._batch_size))):
                     if i % 250 == 0 and verbose:
                         print('-- val batch {}'.format(i))
 
-                    assert len(x) == len(y) # chunk sizes should be equal
+                    assert len(x) == len(y)  # chunk sizes should be equal
                     x = self.process_x(x)
                     y = self.process_y(y)
 
                     batch_probas = self._model.predict_proba(
                         x, batch_size=self._batch_size, verbose=0)
-                    y_val_probas = np.append(y_val_probas, batch_probas, axis=0)
+                    y_val_probas = np.append(
+                        y_val_probas, batch_probas, axis=0)
 
                 val_loss = log_loss(y_val, y_val_probas,
                                     labels=range(self._num_class))
@@ -145,7 +144,7 @@ class Model(object):
                     patience_counter = self._patience
                     best_val_loss = val_loss
                     best_epoch = epoch
-                    model_weights = self._model.get_weights() # save best model
+                    model_weights = self._model.get_weights()  # save best model
 
             if verbose:
                 print('Hit max number of training epochs: {}'
@@ -225,5 +224,5 @@ def chunks(lst, n):
     """Generator which yields n-sized chunks from a list."""
     assert n > 0
     for i in range(0, len(lst), n):
-        chunk = lst[i:i+n]
+        chunk = lst[i:i + n]
         yield chunk

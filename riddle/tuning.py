@@ -11,8 +11,6 @@ Copyright:  2018, all rights reserved
 
 from __future__ import print_function
 
-import sys
-import time
 from itertools import product
 
 import numpy as np
@@ -48,6 +46,7 @@ class Uniform(object):
         return uniform(loc=self.lo, scale=self.scale).rvs(
             random_state=random_state)
 
+
 class UniformInteger(Uniform):
     """Uniform random integer generator."""
 
@@ -80,7 +79,8 @@ class UniformLogSpace(object):
         if random_state is None:
             exp = uniform(loc=self.lo, scale=self.scale).rvs()
         else:
-            exp = uniform(loc=self.lo, scale=self.scale).rvs(random_state=random_state)
+            exp = uniform(loc=self.lo, scale=self.scale).rvs(
+                random_state=random_state)
 
         if self.mass_on_zero > 0.0 and np.random.uniform() < self.mass_on_zero:
             return 0.0
@@ -167,11 +167,11 @@ def random_search(model_class, init_args, param_dist, x_unvec, y,
     for _ in range(num_search):
         param = {}
         for param_name, values in param_dist.items():
-            if hasattr(values, '__getitem__'): # list
+            if hasattr(values, '__getitem__'):  # list
                 param[param_name] = values[np.random.randint(0, len(values))]
-            elif hasattr(values, 'rvs'): # distributino
+            elif hasattr(values, 'rvs'):  # distributino
                 param[param_name] = values.rvs()
-            else: # single item
+            else:  # single item
                 param[param_name] = values
         param_list.append(param)
 
@@ -254,7 +254,7 @@ def _search(model_class, init_args, param_list, x_unvec, y, num_class, k=3,
     perm_indices = np.random.permutation(num_sample)
 
     best_param_set = None
-    best_loss = sys.float_info.max
+    best_loss = float('inf')
     worst_loss = -1
     for param_set in param_list:
         y_test_probas_all = np.empty([0, num_class])

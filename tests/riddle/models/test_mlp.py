@@ -10,13 +10,13 @@ Copyright:  2016, all rights reserved
 """
 
 import pytest
-import sys; sys.dont_write_bytecode = True
 
 import numpy as np
 from riddle.models import mlp
 
 
 class TestMLP():
+
     def test__process_data(self):
         x = [[9, 4, 5, 2], [4, 4, 5, 6, 2], [0, 2, 3, 4], [3]]
         y = [0, 2, 1, 6]
@@ -41,4 +41,3 @@ class TestMLP():
 
         assert np.all(np.equal(x_out, x_expected))
         assert np.all(np.equal(y_out, y_expected))
-

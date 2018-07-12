@@ -141,14 +141,14 @@ def run(method, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
     start = time.time()
     if method == 'riddle':
         model_class = MLP
-        init_args = {'num_feature':num_feature, 'num_class': num_class}
+        init_args = {'num_feature': num_feature, 'num_class': num_class}
         param_dist = {
             'num_hidden_layer': 2,  # [1, 2]
             'num_hidden_node': 512,  # [128, 256, 512]
             'activation': ['prelu', 'relu'],
             'dropout': tuning.Uniform(lo=0.2, hi=0.8),
             'learning_rate': tuning.UniformLogSpace(10, lo=-6, hi=-1),
-            }
+        }
         best_param = tuning.random_search(
             model_class, init_args, param_dist, x_val_unvec, y_val,
             num_class=num_class, k=TUNING_K, num_search=num_search)
@@ -167,7 +167,7 @@ def run(method, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
                 'max_features': ['sqrt', 'log2', None],
                 'max_depth': tuning.UniformIntegerLogSpace(base=2, lo=0, hi=7),
                 'n_estimators': tuning.UniformIntegerLogSpace(base=2, lo=4, hi=8)
-                }
+            }
         elif method == 'linear_svm':
             from sklearn.svm import SVC
             # remark: due to a bug in scikit-learn / libsvm, the sparse 'linear'
@@ -177,7 +177,7 @@ def run(method, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
                             probability=True, cache_size=1000)
             param_dist = {
                 'C': tuning.UniformLogSpace(base=10, lo=-2, hi=1)
-                }
+            }
         elif method == 'poly_svm':
             from sklearn.svm import SVC
             estimator = SVC(kernel='poly', probability=True, cache_size=1000)
@@ -185,14 +185,14 @@ def run(method, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
                 'C': tuning.UniformLogSpace(base=10, lo=-2, hi=1),
                 'degree': [2, 3, 4],
                 'gamma': tuning.UniformLogSpace(base=10, lo=-5, hi=1)
-                }
+            }
         elif method == 'rbf_svm':
             from sklearn.svm import SVC
             estimator = SVC(kernel='rbf', probability=True, cache_size=1000)
             param_dist = {
                 'C': tuning.UniformLogSpace(base=10, lo=-2, hi=1),
                 'gamma': tuning.UniformLogSpace(base=10, lo=-5, hi=1)
-                }
+            }
         elif method == 'gbdt':
             from xgboost import XGBClassifier
             estimator = XGBClassifier(objective='multi:softprob')
@@ -200,7 +200,7 @@ def run(method, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
                 'max_depth': tuning.UniformIntegerLogSpace(base=2, lo=0, hi=5),
                 'n_estimators': tuning.UniformIntegerLogSpace(base=2, lo=4, hi=8),
                 'learning_rate': tuning.UniformLogSpace(base=10, lo=-3, hi=0)
-                }
+            }
         else:
             raise ValueError('unknown method: {}'.format(method))
 
@@ -208,7 +208,6 @@ def run(method, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
             estimator, param_dist, refit=False, n_iter=num_search,
             scoring=loss_scorer)
         param_search.fit(x_val, y_val)
-
 
         best_param = param_search.best_params_
 
@@ -258,7 +257,7 @@ def run_kfold(data_fn, method='logit', prop_missing=0., max_num_feature=-1,
     param_path = get_param_path(cache_dir, method, data_fn, prop_missing,
                                 max_num_feature, feature_selection)
     if not force_run and os.path.isfile(param_path):
-        warnings.warn('Already did search for {}, not performing search'
+        warnings.warn('Already did search for {}, skipping the search'
                       .format(method))
         return
 
@@ -275,7 +274,7 @@ def run_kfold(data_fn, method='logit', prop_missing=0., max_num_feature=-1,
             k_idx=k_idx, k=k, num_search=num_search, perm_indices=perm_indices)
 
     recursive_mkdir(FLAGS.cache_dir)
-    with open(param_path, 'w') as f:  # save
+    with open(param_path, 'wb') as f:  # save
         pickle.dump(params, f)
 
     print('Finished parameter search for method: {}'.format(method))

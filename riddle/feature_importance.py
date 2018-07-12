@@ -26,8 +26,8 @@ from .summary import Summary
 
 # import deeplift, configure path if not already installed
 sys.path.append(dirname(dirname(abspath(__file__))) + '/deeplift')
-from deeplift.conversion import keras_conversion as kc
-from deeplift.blobs import NonlinearMxtsMode
+from deeplift.conversion import kerasapi_conversion as kc
+from deeplift.layers import NonlinearMxtsMode
 
 # how to handle floating pt errs
 np.seterr(divide='ignore', over='raise', under='raise')
@@ -83,7 +83,7 @@ class FeatureImportanceSummary(Summary):
              ('unadjusted_t', list_unadjusted_t), ('p', list_p)]))
 
 
-def get_diff_sums(model, x_test, process_x_func, num_feature, num_class,
+def get_diff_sums(hdf5_path, x_test, process_x_func, num_feature, num_class,
                   batch_size=1024):
     """Get differences in sums of contribution score values.
 
@@ -93,8 +93,8 @@ def get_diff_sums(model, x_test, process_x_func, num_feature, num_class,
     (to be used for paired t-tests).
 
     Arguments:
-        model: keras.models.Model
-            trained Keras model
+        hdf5_path: str
+            path to saved HDF5 Keras Model
         process_x_func: function
             function for vectorizing feature data
         num_feature: int
@@ -124,7 +124,7 @@ def get_diff_sums(model, x_test, process_x_func, num_feature, num_class,
             list of pairs of classes which were compared during interpretation
     """
     dlc_generator = _deeplift_contribs_generator(
-        model, x_test, process_x_func, num_feature=num_feature,
+        hdf5_path, x_test, process_x_func, num_feature=num_feature,
         num_class=num_class, batch_size=batch_size)
 
     sums_D, sums_D2, sums_contribs, pairs = _diff_sums_from_generator(
@@ -133,15 +133,15 @@ def get_diff_sums(model, x_test, process_x_func, num_feature, num_class,
     return sums_D, sums_D2, sums_contribs, pairs
 
 
-def _deeplift_contribs_generator(model, x_test, process_x_func,
+def _deeplift_contribs_generator(hdf5_path, x_test, process_x_func,
                                  num_feature, num_class, batch_size):
     """Generator which yields DeepLIFT contribution scores.
 
     Applies vectorization batch-by-batch to avoid memory overflow.
 
     Arguments:
-        model: keras.models.Model
-            trained Keras model
+        hdf5_path: str
+            path to saved HDF5 Keras Model
         process_x_func: function
             function for vectorizing feature data
         num_feature: int
@@ -152,8 +152,8 @@ def _deeplift_contribs_generator(model, x_test, process_x_func,
             batch size
     """
     # convert Keras model, and get relevant function
-    deeplift_model = kc.convert_sequential_model(
-        model, num_dims=2, nonlinear_mxts_mode=NonlinearMxtsMode.RevealCancel)
+    deeplift_model = kc.convert_model_from_saved_files(
+        hdf5_path, nonlinear_mxts_mode=NonlinearMxtsMode.RevealCancel)
     # input layer is 0, since we have a softmax layer the target layer is -2
     get_deeplift_contribs = deeplift_model.get_target_contribs_func(
         find_scores_layer_idx=0, target_layer_idx=-2)
@@ -164,7 +164,7 @@ def _deeplift_contribs_generator(model, x_test, process_x_func,
         start = time.time()
         x = process_x_func(x)
         batch_size = len(x)
-        zeros = [0.0] * batch_size # reference data
+        zeros = [0.0] * batch_size  # reference data
         all_batch_contribs = np.zeros((num_class, batch_size, num_feature))
 
         for c in range(num_class):
@@ -213,7 +213,7 @@ def _diff_sums_from_generator(generator, num_feature, num_class):
     # find unique pairs
     pairs = [[(i, j) for j in range(i + 1, num_class)]
              for i in range(num_class)]
-    pairs = [p for sublist in pairs for p in sublist] # flatten
+    pairs = [p for sublist in pairs for p in sublist]  # flatten
     num_pair = len(pairs)
 
     # array of running sums of differences (D) and D^2 (D2)
@@ -226,7 +226,7 @@ def _diff_sums_from_generator(generator, num_feature, num_class):
 
     # compute running sums for each pair of classes and their D, D2 values,
     # updating these values batch-by-batch
-    for batch_idx, batch_contrib_scores in enumerate(generator):
+    for _, batch_contrib_scores in enumerate(generator):
         for class_idx in range(num_class):
             contribs = batch_contrib_scores[class_idx]
 
@@ -288,7 +288,7 @@ def _paired_ttest_with_diff_sums(sums_D, sums_D2, pairs, num_sample):
     num_feature = len(sums_D[0])
 
     # compute T for each pair of classes
-    unadjusted_t_values = np.empty((num_pair, num_feature)) # placeholder
+    unadjusted_t_values = np.empty((num_pair, num_feature))  # placeholder
 
     for pair_idx in range(len(pairs)):
         sum_D = sums_D[pair_idx]
@@ -305,7 +305,7 @@ def _paired_ttest_with_diff_sums(sums_D, sums_D2, pairs, num_sample):
 
         unadjusted_t_values[pair_idx] = t
 
-    dof = num_sample - 1 # degrees of freedom
+    dof = num_sample - 1  # degrees of freedom
 
     # compute two-sided p-value, e.g., Pr(abs(t)> tt)
     unadjusted_p_values = stats.t.sf(np.abs(unadjusted_t_values), dof) * 2
@@ -398,9 +398,9 @@ def _get_list_pairs(pairs, idx_class_dict, num_feature):
             list of pairs of compared classes with length num_feature * num_pair
     """
     list_pairs = [[p] * num_feature for p in pairs]
-    list_pairs = [p for sublist in list_pairs for p in sublist] # flatten
+    list_pairs = [p for sublist in list_pairs for p in sublist]  # flatten
     list_pairs = [[idx_class_dict[p[0]], idx_class_dict[p[1]]]
-                  for p in list_pairs] # lookup class
+                  for p in list_pairs]  # lookup class
     return list_pairs
 
 
@@ -443,7 +443,7 @@ def _get_list_feat_descripts(list_feat_names, icd9_descript_dict):
             list of feature descriptions with length num_feature * num_pair
     """
     # returns the description for a feature; expects the string feature name
-    def get_descript(feat, icd9_descript_dict):
+    def _get_descript(feat, icd9_descript_dict):
         if feat[:6] == 'gender':
             return 'gender'
         elif feat[:3] == 'age':
@@ -455,7 +455,7 @@ def _get_list_feat_descripts(list_feat_names, icd9_descript_dict):
                          .format(feat))
 
     list_feat_descripts = [
-        get_descript(f, icd9_descript_dict=icd9_descript_dict)
+        _get_descript(f, icd9_descript_dict=icd9_descript_dict)
         for f in list_feat_names]
 
     return list_feat_descripts

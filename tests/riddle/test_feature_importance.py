@@ -2,18 +2,16 @@
 
 import pytest
 
-import sys; sys.dont_write_bytecode = True
 import os
 import pickle
 
-from keras.models import load_model
 import numpy as np
 from scipy.stats import ttest_rel
 
 from riddle import feature_importance
 from riddle.models import MLP
 
-EPSILON = 1e-6  # tolerance
+EPSILON = 1e-5  # tolerance
 
 
 # helper function to remove nan
@@ -24,7 +22,7 @@ def del_nans(a):
 
 @pytest.fixture(scope='module')
 def data():
-    X_test_fn, model_fn = 'ut_X_test.pkl', 'ut_model.h5'
+    x_test_fn, model_fn = 'ut_x_test.pkl', 'ut_model.h5'
 
     def find(name):
         path = os.getcwd()
@@ -34,26 +32,25 @@ def data():
 
         raise ValueError('file `{}` not found in path `{}`'.format(name, path))
 
-    X_test_path = find(X_test_fn)
+    x_test_path = find(x_test_fn)
     model_path = find(model_fn)
 
-    with open(X_test_path, 'r') as f:
-        X_test = pickle.load(f)
-    model = load_model(model_path)
+    with open(x_test_path, 'r') as f:
+        x_test = pickle.load(f)
 
-    return model, X_test
+    return model_path, x_test
 
 
 def test__deeplift_contribs_generator(data):
-    model, X_test = data
+    model_fn, x_test = data
 
     num_feature, num_class, num_sample = 1717, 4, 20
     batch_size = 5
 
     temp_model = MLP(num_feature=num_feature, num_class=num_class)
     dlc_gen = feature_importance._deeplift_contribs_generator(
-        model,
-        X_test,
+        model_fn,
+        x_test,
         process_x_func=temp_model.process_x,
         num_feature=num_feature,
         num_class=num_class,
@@ -67,20 +64,21 @@ def test__deeplift_contribs_generator(data):
 
 
 def test__diff_sums_from_generator():
-    def test_gen_1(): # generator with 1 row per batch
+    def test_gen_1():  # generator with 1 row per batch
         yield [np.asarray([0.4, 0.1]),
                np.asarray([0.5, 0.7]),
                np.asarray([12, 12])]
         yield [np.asarray([5, 4]),
                np.asarray([3, 2]),
                np.asarray([1, 9])]
-    def test_gen_2(): # generator with 2 rows per batch
+
+    def test_gen_2():  # generator with 2 rows per batch
         yield [np.asarray([[0.4, 0.1], [0.4, 0.1]]),
-            np.asarray([[0.5, 0.7], [0.5, 0.7]]),
-            np.asarray([[12, 12], [12, 12]])]
+               np.asarray([[0.5, 0.7], [0.5, 0.7]]),
+               np.asarray([[12, 12], [12, 12]])]
         yield [np.asarray([[5, 4], [5, 4]]),
-            np.asarray([[3, 2], [3, 2]]),
-            np.asarray([[1, 9], [1, 9]])]
+               np.asarray([[3, 2], [3, 2]]),
+               np.asarray([[1, 9], [1, 9]])]
 
     num_feature = 2
     num_class = 3
@@ -108,7 +106,6 @@ def test__diff_sums_from_generator():
                 np.asarray([13.0, 21.0])]
     assert np.all(np.equal(running_sums_contribs, expected))
 
-
     running_sums_D, running_sums_D2, running_sums_contribs, pairs = \
         feature_importance._diff_sums_from_generator(
             test_gen_2(),
@@ -135,13 +132,13 @@ def test__diff_sums_from_generator():
 
 def test__bonferroni():
     assert feature_importance._bonferroni([0.10], 10) == [1.0]
-    assert feature_importance._bonferroni([0.95], 5)  == [1.0]
-    assert feature_importance._bonferroni([0.10], 5)  == [0.5]
-    assert feature_importance._bonferroni([0.01], 3)  == [0.03]
+    assert feature_importance._bonferroni([0.95], 5) == [1.0]
+    assert feature_importance._bonferroni([0.10], 5) == [0.5]
+    assert feature_importance._bonferroni([0.01], 3) == [0.03]
 
 
 def test__paired_ttest_with_diff_sums(data):
-    model, X_test = data
+    model_fn, x_test = data
 
     pairs = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
     num_pair = len(pairs)
@@ -150,8 +147,8 @@ def test__paired_ttest_with_diff_sums(data):
     batch_size = 5
     temp_model = MLP(num_feature=num_feature, num_class=num_class)
     dlc_gen = feature_importance._deeplift_contribs_generator(
-        model,
-        X_test,
+        model_fn,
+        x_test,
         process_x_func=temp_model.process_x,
         num_feature=num_feature,
         num_class=num_class,
@@ -175,8 +172,8 @@ def test__paired_ttest_with_diff_sums(data):
 
     # force only 1 batch with abnormally high batch_size parameter
     alt_dlc_gen = feature_importance._deeplift_contribs_generator(
-        model,
-        X_test,
+        model_fn,
+        x_test,
         process_x_func=temp_model.process_x,
         num_feature=num_feature,
         num_class=num_class,
@@ -187,7 +184,7 @@ def test__paired_ttest_with_diff_sums(data):
     # works as an alternative implementation for a tiny unit testing dataset
     alt_t_values, alt_p_values = [], []
     for idx, contribs in enumerate(alt_dlc_gen):
-        assert not idx # check only 1 batch (idx == 0)
+        assert not idx  # check only 1 batch (idx == 0)
         for i, j in pairs:
             curr_t_values = np.zeros((num_feature, ))
             curr_p_values = np.zeros((num_feature, ))
@@ -203,19 +200,28 @@ def test__paired_ttest_with_diff_sums(data):
     for r in range(len(pairs)):
         t = unadjusted_t_values[r]
         alt_t = alt_t_values[r]
-        p = p_values[r] # already bonferroni adjusted
+        p = p_values[r]  # already bonferroni adjusted
         alt_p = feature_importance._bonferroni(alt_p_values[r],
                                                num_pair * num_feature)
 
         assert t.shape == alt_t.shape
         assert p.shape == alt_p.shape
 
+        a = del_nans(np.abs(alt_t - t))
+        b = a < EPSILON
+        print(a)
+        print('\n' * 3)
+        print(b)
+        print('\n' * 3)
+        print(a[~b])
+        print('\n' * 3)
+
         assert np.all(del_nans(np.abs(alt_t - t)) < EPSILON)
         assert np.all(del_nans(np.abs(alt_p - p)) < EPSILON)
 
 
 def test__get_list_signif_scores(data):
-    model, X_test = data
+    model_fn, x_test = data
 
     pairs = [(0, 1), (0, 2), (0, 3), (1, 2), (1, 3), (2, 3)]
     num_pair = len(pairs)
@@ -224,8 +230,8 @@ def test__get_list_signif_scores(data):
     batch_size = 5
     temp_model = MLP(num_feature=num_feature, num_class=num_class)
     dlc_gen = feature_importance._deeplift_contribs_generator(
-        model,
-        X_test,
+        model_fn,
+        x_test,
         process_x_func=temp_model.process_x,
         num_feature=num_feature,
         num_class=num_class,
@@ -265,7 +271,7 @@ def test__get_list_signif_scores(data):
 
 def test__get_list_pairs():
     pairs = [[1, 2], [5, 6], [1, 5]]
-    idx_class_dict = {1: 'A', 2: 'B', 5: 'C', 6:'D'}
+    idx_class_dict = {1: 'A', 2: 'B', 5: 'C', 6: 'D'}
     num_feature = 3
 
     list_pairs = feature_importance._get_list_pairs(pairs, idx_class_dict,
@@ -279,13 +285,13 @@ def test__get_list_pairs():
 
 
 def test__get_list_feat_names():
-    idx_feat_dict = {0:'English', 1:'Standard', 2:'Version'}
+    idx_feat_dict = {0: 'English', 1: 'Standard', 2: 'Version'}
     num_pair = 3
     list_feat_names = feature_importance._get_list_feat_names(idx_feat_dict,
                                                               num_pair)
     expected_list_feat_names = [
         'English', 'Standard', 'Version', 'English', 'Standard', 'Version',
-        'English','Standard','Version'
+        'English', 'Standard', 'Version'
     ]
     assert list_feat_names == expected_list_feat_names
 

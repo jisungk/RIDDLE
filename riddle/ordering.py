@@ -69,31 +69,31 @@ class OrderingSummary(Summary):
         """
         ordering_keys = [key for key in self.od.keys() if 'ordering' in key]
 
-        with open(out_dir + '/orderings_ordered_dict.pkl', 'w') as f:
+        with open(out_dir + '/orderings_ordered_dict.pkl', 'wb') as f:
             pickle.dump(self.od, f)
 
         with open(out_dir + '/orderings.txt', 'w') as f:
             # write header
-            [f.write(str(key) + '\t') for key in self.od.keys()[:-1]]
-            f.write(str(self.od.keys()[-1]) + '\n')
+            [f.write(str(key) + '\t') for key in list(self.od.keys())[:-1]]
+            f.write(str(list(self.od.keys())[-1]) + '\n')
 
-            num_feature = len(self.od.values()[0])
+            num_feature = len(list(self.od.values())[0])
             num_columns = len(self.od.keys())
 
             for feat_idx in range(num_feature):
                 for col_idx, (key, value) in enumerate(self.od.items()):
-                    def order_pair_to_string(pair, precision=PRECISION):
+                    def _order_pair_to_string(pair, precision=PRECISION):
                         first = pair[0]
                         second = pair[1]
-                        if isinstance(second, float): # if float value, round
+                        if isinstance(second, float):  # if float value, round
                             second = round(second, precision)
 
                         return str(first) + ' (' + str(second) + ')'
 
                     v = value[feat_idx]
                     if key in ordering_keys:
-                        v = ' > '.join([order_pair_to_string(p) for p in v])
-                    assert '\t' not in v # would screw up tab-delim
+                        v = ' > '.join([_order_pair_to_string(p) for p in v])
+                    assert '\t' not in v  # would screw up tab-delim
 
                     f.write(str(v))
                     if col_idx < num_columns - 1:
@@ -138,15 +138,15 @@ class OrderingSummary(Summary):
                         f.write('\n')
 
                 for row_idx, list_pairs in enumerate(curr_table_data):
-                    f.write(self.od[feat_key][row_idx]) # write feat
+                    f.write(self.od[feat_key][row_idx])  # write feat
                     f.write('\t')
 
                     scores = [''] * num_class
                     for class_value_pair in list_pairs:
                         class_idx = class_idx_dict[class_value_pair[0]]
-                        assert scores[class_idx] == '' # shouldn't be init.
+                        assert scores[class_idx] == ''  # shouldn't be init.
                         score = str(class_value_pair[1])
-                        assert '\t' not in score # would screw up tab-delim
+                        assert '\t' not in score  # would screw up tab-delim
                         scores[class_idx] = score
 
                     assert all([s != '' for s in scores])
@@ -188,7 +188,7 @@ def summarize_orderings(contrib_sums, class_feat_freq_table, idx_feat_dict,
         _compute_orderings(class_feat_prop_table), idx_class_dict)
 
     list_feat_names = feature_importance._get_list_feat_names(
-        idx_feat_dict, num_pair=1) # since we only want 1 repetition
+        idx_feat_dict, num_pair=1)  # since we only want 1 repetition
     list_feat_descripts = feature_importance._get_list_feat_descripts(
         list_feat_names, icd9_descript_dict=icd9_descript_dict)
 
@@ -228,7 +228,8 @@ def _compute_orderings(score_array):
         # list of (class index, class-specific score) for curr feature
         class_scores = [(class_idx, score_array[class_idx][feat_idx])
                         for class_idx in range(num_class)]
-        ordered_classes = sorted(class_scores, key=lambda x: x[1], reverse=True)
+        ordered_classes = sorted(
+            class_scores, key=lambda x: x[1], reverse=True)
         orderings.append(ordered_classes)
 
     return orderings

@@ -115,14 +115,16 @@ def run(ModelClass, x_unvec, y, idx_feat_dict, num_feature, max_num_feature,
             x_train_unvec, y_train, idx_feat_dict,
             method=feature_selection, num_feature=num_feature,
             max_num_feature=max_num_feature)
-        x_train_unvec = subset_reencode_features(x_train_unvec, feat_encoding_dict)
-        x_test_unvec = subset_reencode_features(x_test_unvec, feat_encoding_dict)
+        x_train_unvec = subset_reencode_features(
+            x_train_unvec, feat_encoding_dict)
+        x_test_unvec = subset_reencode_features(
+            x_test_unvec, feat_encoding_dict)
         num_feature = max_num_feature
 
     x_train = vectorize_features(x_train_unvec, num_feature)
     x_test = vectorize_features(x_test_unvec, num_feature)
 
-    args = dict(init_args) # copy dictionary
+    args = dict(init_args)  # copy dictionary
     args.update(params[k_idx])
 
     start = time.time()
@@ -173,20 +175,21 @@ def run_kfold(data_fn, method='logit', prop_missing=0., max_num_feature=-1,
     """
     start = time.time()
 
-    try: # load saved parameters
+    try:  # load saved parameters
         param_path = get_param_path(cache_dir, method, data_fn, prop_missing,
                                     max_num_feature, feature_selection)
-        with open(param_path, 'r') as f:
+        with open(param_path, 'rb') as f:
             params = pickle.load(f)
     except:
         warnings.warn('Cannot load parameters from: {}\n'.format(param_path) +
                       'Need to do parameter search; run parameter_search.py')
         raise
 
-    # TODO(jisungkim) handle binary and multiclass separately, don't assume multiclass!
+    # TODO(jisungkim) handle binary and multiclass separately, don't assume
+    # multiclass!
     if method == 'logit':
         from sklearn.linear_model import LogisticRegression as ModelClass
-        init_args = {'multi_class': 'multinomial', 'solver':'lbfgs'}
+        init_args = {'multi_class': 'multinomial', 'solver': 'lbfgs'}
     elif method == 'random_forest':
         from sklearn.ensemble import RandomForestClassifier as ModelClass
         init_args = {}

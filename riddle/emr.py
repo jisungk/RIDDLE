@@ -106,7 +106,8 @@ def get_k_fold_partition(x_unvec, y, k_idx, k, perm_indices):
     (x_unvec_train, y_train), (x_unvec_val, y_val) = _split_data(
         x_unvec_train, y_train, k_idx=0, k=10, perm_indices=val_perm_indices)
 
-    assert len(x_unvec_train) + len(x_unvec_val) + len(x_unvec_test) == len(x_unvec)
+    assert len(x_unvec_train) + len(x_unvec_val) + \
+        len(x_unvec_test) == len(x_unvec)
 
     return x_unvec_train, y_train, x_unvec_val, y_val, x_unvec_test, y_test
 
@@ -125,18 +126,18 @@ def get_icd9_descript_dict(path):
     lines = _read_file(path)
     icd9_descript_dict = {}
 
-    for l in lines[1:]: # ignore first line which is column names
+    for l in lines[1:]:  # ignore first line which is column names
         elems = l.split('\t')
 
         try:
-            assert len(elems) == 8 # number of columns should be 8
+            assert len(elems) == 8  # number of columns should be 8
         except:
             print('Problem with following line while loading icd9_descript_dict:')
             print(l)
             raise
 
-        icd9 = elems[0] # ICD9 code should be in the first column
-        descript = elems[1] # description should be in the second column
+        icd9 = elems[0]  # ICD9 code should be in the first column
+        descript = elems[1]  # description should be in the second column
 
         # check if the ICD9 code is a category and if so, append a label
         is_category = len(icd9.split('.')) == 1
@@ -199,13 +200,13 @@ def _clean_data(data, icd9_descript_dict, no_onset_age=True):
             icd9s.sort(key=lambda i: int(i[1]))
 
             if no_onset_age:
-                icd9s = [i[0] for i in icd9s] # remove onset age
+                icd9s = [i[0] for i in icd9s]  # remove onset age
             else:
                 icd9s = [':'.join(i) for i in icd9s]
             features.extend(icd9s)
 
             x_raw.append(features)
-            y_raw.append(line[RAW_CLASS_COL]) # extract class
+            y_raw.append(line[RAW_CLASS_COL])  # extract class
         except:
             print('WARNING: error on line #{} with case:'.format(idx))
             print(' '.join(line))

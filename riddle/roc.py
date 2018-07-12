@@ -12,13 +12,15 @@ Copyright:  2018, all rights reserved
 from __future__ import print_function
 
 import numpy as np
-import matplotlib; matplotlib.use('Agg') # do not run X server
+import matplotlib
+matplotlib.use('Agg')  # do not run X server
+
 import matplotlib.pyplot as plt
+plt.style.use('ggplot')
+
 from scipy import interp
 from sklearn.metrics import roc_curve, auc
 from sklearn.preprocessing import label_binarize
-
-plt.style.use('ggplot')
 
 
 def compute_and_plot_roc_scores(y_test, y_test_probas, num_class, path=None):
@@ -73,7 +75,8 @@ def _create_roc_plot(roc_auc_dict, fpr_dict, tpr_dict, num_class, path):
             filepath where to save the plot
     """
     # aggregate all false positive rates
-    all_fpr = np.unique(np.concatenate([fpr_dict[i] for i in range(num_class)]))
+    all_fpr = np.unique(np.concatenate(
+        [fpr_dict[i] for i in range(num_class)]))
 
     # interpolate all ROC curves at this points
     mean_tpr = np.zeros_like(all_fpr)
@@ -110,7 +113,7 @@ def _create_roc_plot(roc_auc_dict, fpr_dict, tpr_dict, num_class, path):
     plt.title('Some extension of Receiver operating characteristic to multi-class')
     plt.legend(loc="lower right")
 
-    plt.savefig(path) # save plot
+    plt.savefig(path)  # save plot
     plt.close()
 
 
@@ -140,7 +143,8 @@ def _compute_roc_stats(y_test, y_test_probas, num_class):
 
     fpr_dict, tpr_dict, roc_auc_dict = {}, {}, {}
     for i in range(num_class):
-        fpr_dict[i], tpr_dict[i], _ = roc_curve(y_test[:, i], y_test_probas[:, i])
+        fpr_dict[i], tpr_dict[i], _ = roc_curve(
+            y_test[:, i], y_test_probas[:, i])
         roc_auc_dict[i] = auc(fpr_dict[i], tpr_dict[i])
 
     # Compute micro-average ROC curve and ROC area

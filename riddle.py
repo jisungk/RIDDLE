@@ -181,7 +181,7 @@ def run_kfold(data_fn, prop_missing=0., max_num_feature=-1,
 
     base_out_dir = get_base_out_dir(out_dir, 'riddle', data_fn, prop_missing,
                                     max_num_feature, feature_selection)
-    recursive_mkdir(cache_dir)
+    recursive_mkdir(base_out_dir)
 
     # get common data
     x_unvec, y, idx_feat_dict, idx_class_dict, icd9_descript_dict, perm_indices = (
@@ -197,10 +197,10 @@ def run_kfold(data_fn, prop_missing=0., max_num_feature=-1,
         for idx, feat in idx_feat_dict.items():
             f.write('{}\t{}\n'.format(idx, feat))
 
-    try: # load saved parameters
+    try:  # load saved parameters
         param_path = get_param_path(cache_dir, 'riddle', data_fn, prop_missing,
                                     max_num_feature, feature_selection)
-        with open(param_path, 'r') as f:
+        with open(param_path, 'rb') as f:
             params = pickle.load(f)
 
         # for legacy compatability

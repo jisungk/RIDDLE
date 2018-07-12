@@ -5,7 +5,7 @@ _secret/
 *.png
 venv/
 *TODO*
-*.pkl
+_data/*.pkl
 
 # Batch scripts / output
 *.sbatch
@@ -20,7 +20,7 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# C extensions
+# C exetensions
 *.so
 
 # Distribution / packaging

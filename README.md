@@ -14,7 +14,7 @@ Please visit [riddle.ai](https://riddle.ai).
 ### Dependencies
 Python Libraries:
 * Keras (`keras`)
-* DeepLIFT (`deeplift`, install from GitHub)
+* DeepLIFT (`deeplift`, available on GitHub)
 * TensorFlow (`tensorflow`) or Theano (`theano`)
 * scikit-learn (`sklearn`)
 * NumPy (`numpy`)
@@ -38,12 +38,8 @@ Execute the following command in the outer *repository* folder (not `riddle/ridd
 You can clone the GitHub repo and go from there:
 ```
 % git clone --recursive git://github.com/jisungk/riddle.git
-```
-
-Alternatively, you can install RIDDLE and DeepLIFT from GitHub using `pip`:
-```
-% pip install git+git://github.com/kundajelab/deeplift.git # DeepLIFT
-% pip install git+git://github.com/jisungk/riddle.git      # RIDDLE
+% cd riddle
+% pip install -r requirements.txt
 ```
 
 #### How can I run the RIDDLE pipeline?
@@ -61,17 +57,16 @@ Please refer to the example data file `dummy.txt` and the accompanying `README` 
 
 ### Authors
 
-[Ji-Sung Kim](http://jisungkim.com)
-Princeton University
-*hello (at) jisungkim.com*
+[Ji-Sung Kim](http://jisungkim.com)  
+Princeton University  
+*hello (at) jisungkim.com* (technical inquiries)  
 
-[Xin Gao](https://scholar.google.com/citations?user=wqdK8ugAAAAJ&hl=en), Associate Professor
-King Abdullah University of Science and Technology
-*xin.gao (at) kaust.edu.sa*
+[Xin Gao](https://scholar.google.com/citations?user=wqdK8ugAAAAJ&hl=en), Associate Professor  
+King Abdullah University of Science and Technology  
 
-[Andrey Rzhetsky](https://scholar.google.com/citations?user=HXCMYLsAAAAJ&hl=en), Edna K. Papazian Professor
-University of Chicago
-*andrey.rzhetsky (at) uchicago.edu*
+[Andrey Rzhetsky](https://scholar.google.com/citations?user=HXCMYLsAAAAJ&hl=en), Edna K. Papazian Professor  
+University of Chicago  
+*andrey.rzhetsky (at) uchicago.edu* (research inquiries)  
 
 ### License & Attribution
 All media (including but not limited to designs, images and logos) are copyrighted by Ji-Sung Kim (2017).

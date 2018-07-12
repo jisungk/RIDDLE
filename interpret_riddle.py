@@ -188,20 +188,20 @@ def run(data_fn, prop_missing=0., max_num_feature=-1,
         start = time.time()
 
         temp_mlp = MLP(num_feature=num_feature, num_class=num_class)
-        keras_model = load_model(full_out_dir + '/model.h5')
+        hdf5_path = full_out_dir + '/model.h5'
         sums_D, sums_D2, sums_contribs, pairs = \
             feature_importance.get_diff_sums(
-                keras_model,
+                hdf5_path,
                 x_test_unvec,
                 process_x_func=temp_mlp.process_x,
                 num_feature=num_feature,
                 num_class=num_class)
 
-        with open(full_out_dir + '/sums_D.pkl', 'w') as f:
+        with open(full_out_dir + '/sums_D.pkl', 'wb') as f:
             pickle.dump(sums_D, f)
-        with open(full_out_dir + '/sums_D2.pkl', 'w') as f:
+        with open(full_out_dir + '/sums_D2.pkl', 'wb') as f:
             pickle.dump(sums_D2, f)
-        with open(full_out_dir + '/sums_contribs.pkl', 'w') as f:
+        with open(full_out_dir + '/sums_contribs.pkl', 'wb') as f:
             pickle.dump(sums_contribs, f)
 
         list_sums_D.append(sums_D)
@@ -232,6 +232,7 @@ def run(data_fn, prop_missing=0., max_num_feature=-1,
           .format(time.time() - start))
     print('-' * 72)
     print()
+
 
 def main():
     """Main method."""

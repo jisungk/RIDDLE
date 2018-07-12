@@ -11,10 +11,8 @@ Copyright:  2018, all rights reserved
 
 import pytest
 
-import sys; sys.dont_write_bytecode = True
 import os
 from math import fabs
-from itertools import izip
 
 import numpy as np
 
@@ -22,11 +20,12 @@ from riddle.models.model import chunks
 
 
 class TestModel():
+
     def test_chunks(self):
         list_A = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         list_B = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
-        for i, (a, b) in enumerate(izip(chunks(list_A, 4), chunks(list_B, 4))):
+        for i, (a, b) in enumerate(zip(chunks(list_A, 4), chunks(list_B, 4))):
             if i == 0:
                 assert a == [1, 2, 3, 4]
                 assert b == [10, 9, 8, 7]

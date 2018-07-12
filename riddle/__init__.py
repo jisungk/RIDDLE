@@ -11,11 +11,10 @@ from . import ordering
 from . import roc
 from . import tuning
 
-__version__ = '2.0.0'
+__version__ = '2.0.1'
 
 
 def hello():
     """Print out the current version."""
     print('Hello, World')
     print('My name is RIDDLE {}'.format(__version__))
-

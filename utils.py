@@ -47,6 +47,7 @@ def get_param_path(cache_dir, method, data_fn, prop_missing, max_num_feature,
             cache_dir, method, data_fn, prop_missing, max_num_feature,
             feature_selection))
 
+
 def get_base_out_dir(out_dir, method, data_fn, prop_missing, max_num_feature,
                      feature_selection):
     """Get path of pickled parameters."""
@@ -185,10 +186,10 @@ def select_features(x_unvec, y, idx_feat_dict, method, num_feature,
         num_feature, len(selected_features), method))
 
     # get dictionaries to re-encode features with new indices
-    feat_encoding_dict = {old_feat_idx:new_feat_idx for
+    feat_encoding_dict = {old_feat_idx: new_feat_idx for
                           new_feat_idx, old_feat_idx in
                           enumerate(sorted(selected_features))}
-    new_idx_feat_dict = {new_feat_idx:idx_feat_dict[old_feat_idx] for
+    new_idx_feat_dict = {new_feat_idx: idx_feat_dict[old_feat_idx] for
                          old_feat_idx, new_feat_idx in
                          feat_encoding_dict.items()}
 
@@ -288,11 +289,11 @@ def get_preprocessed_data(data_dir, data_fn, prop_missing=0.0):
     # must be before any other calls to np.random
     perm_indices = np.random.permutation(num_sample)
     if os.path.isfile(perm_indices_path):
-        with open(perm_indices_path, 'r') as f:
+        with open(perm_indices_path, 'rb') as f:
             expected_perm_indices = pickle.load(f)
         assert np.all(perm_indices == expected_perm_indices)
     else:  # cache perm_indices
-        with open(perm_indices_path, 'w') as f:
+        with open(perm_indices_path, 'wb') as f:
             pickle.dump(perm_indices, f)
 
     if prop_missing != 0.0:
@@ -326,7 +327,8 @@ def _simulate_missing_data(x_unvec, prop_missing):
             for a sample
     """
     if prop_missing < 0:
-        raise ValueError('prop_missing for simulating missing data is negative')
+        raise ValueError(
+            'prop_missing for simulating missing data is negative')
     if prop_missing == 0.0:
         return x_unvec
 
@@ -334,7 +336,7 @@ def _simulate_missing_data(x_unvec, prop_missing):
     # literal position of that feature observation within a sample
     indices = [[(row_idx, sparse_col_idx) for sparse_col_idx in range(len(x))]
                for row_idx, x in enumerate(x_unvec)]
-    indices = [i for r in indices for i in r] # flatten
+    indices = [i for r in indices for i in r]  # flatten
     np.random.shuffle(indices)
 
     num_to_remove = int(len(indices) * prop_missing)

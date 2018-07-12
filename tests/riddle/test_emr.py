@@ -2,40 +2,44 @@
 
 import pytest
 
-import sys; sys.dont_write_bytecode = True
 import os
 
 import numpy as np
 
 from riddle import emr
 
+
 class TestEMR():
+
     def test__read_file(self):
         temp_fn = 'ut_emr_data.temp'
 
         with open(temp_fn, 'w+') as f:
             f.write('test line 1\n test line 2\ntest line 3 \nthank you!')
 
-        expected = ['test line 1', ' test line 2', 'test line 3 ', 'thank you!']
+        expected = ['test line 1', ' test line 2',
+                    'test line 3 ', 'thank you!']
         assert emr._read_file(temp_fn) == expected
 
         os.remove(temp_fn)  # cleanup
 
     def test__clean_data(self):
         data = ['24 H M V0.0:17 V7.5:15 NULL', '2 B F Z:78 4:7 F2:37 4.0:74']
-        icd9_descript_dict = {'V0.0':'P', 'V7.5':'R', 'Z':'O', '4':'V',
-                              'F2':'E', '4.0':'R', '.z':'B'}
+        icd9_descript_dict = {'V0.0': 'P', 'V7.5': 'R', 'Z': 'O', '4': 'V',
+                              'F2': 'E', '4.0': 'R', '.z': 'B'}
 
         x, y = emr._clean_data(data, icd9_descript_dict=icd9_descript_dict,
                                no_onset_age=True)
-        x = [' '.join(f) for f in x] # stringify sublists for easier comparison
+        # stringify sublists for easier comparison
+        x = [' '.join(f) for f in x]
         expected = ['age_24 gender_M V7.5 V0.0', 'age_2 gender_F 4 F2 4.0 Z']
         assert x == expected
         assert y == ['H', 'B']
 
         x, y = emr._clean_data(data, icd9_descript_dict=icd9_descript_dict,
-            no_onset_age=False)
-        x = [' '.join(f) for f in x] # stringify sublists for easier comparison
+                               no_onset_age=False)
+        # stringify sublists for easier comparison
+        x = [' '.join(f) for f in x]
         expected = ['age_24 gender_M V7.5:15 V0.0:17',
                     'age_2 gender_F 4:7 F2:37 4.0:74 Z:78']
         assert x == expected
@@ -102,7 +106,7 @@ class TestEMR():
             f.write('H.5\tI\tJ\tK\tL\tM\tN\tO\n')
             f.write('P.1\tQ\tR\tS\tT\tU\tV\tW\n')
 
-        expected_dict = {'0':'A (category)', 'H.5':'I', 'P.1':'Q'}
+        expected_dict = {'0': 'A (category)', 'H.5': 'I', 'P.1': 'Q'}
         assert emr.get_icd9_descript_dict(temp_fn) == expected_dict
 
-        os.remove(temp_fn) # cleanup
+        os.remove(temp_fn)  # cleanup
